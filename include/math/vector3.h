@@ -1,3 +1,5 @@
+#pragma once
+
 #include <array>
 #include "typeclass.h"
 #include "vector.h"

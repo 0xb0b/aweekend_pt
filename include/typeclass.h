@@ -1,3 +1,5 @@
+#pragma once
+
 template<typename Typeclass, typename T>
 struct Instance
 {}

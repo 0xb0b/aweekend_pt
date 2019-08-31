@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cmath>
 #include "typeclass.h"
 
@@ -7,7 +9,7 @@ class Vector
 
 // define interface for Vector
 
-template<typename T, REQUIRE(Vector, T)>
+template<typename T, REQUIRE_INSTANCE(Vector, T)>
 T::component_t length(const T& vec)
 {
   //auto sum_squared {T::zero}; assumes definition of zero is in Vector type
@@ -18,7 +20,7 @@ T::component_t length(const T& vec)
   return std::sqrt(sum_squared);
 }
 
-template<typename T, REQUIRE(Vector, T)>
+template<typename T, REQUIRE_INSTANCE(Vector, T)>
 void normalize(T& vec)
 {
   // const auto k = T::component_t::one / length(vec);
@@ -27,19 +29,19 @@ void normalize(T& vec)
     e *= k;
 }
 
-template<typename T, REQUIRE(Vector, T)>
+template<typename T, REQUIRE_INSTANCE(Vector, T)>
 T::component_t operator[](const T& vec, size_t i)
 {
   return vec.data[i];
 }
 
-template<typename T, REQUIRE(Vector, T)>
+template<typename T, REQUIRE_INSTANCE(Vector, T)>
 T::component_t& operator[](T& vec, size_t i)
 {
   return vec.data[i];
 }
 
-template<typename T, REQUIRE(Vector, T)>
+template<typename T, REQUIRE_INSTANCE(Vector, T)>
 T& operator+=(T& vec, const T& other_vec)
 {
   for (size_t i = 0; i < T::size; i++)
@@ -47,7 +49,7 @@ T& operator+=(T& vec, const T& other_vec)
   return vec;
 }
 
-template<typename T, REQUIRE(Vector, T)>
+template<typename T, REQUIRE_INSTANCE(Vector, T)>
 T& operator-=(T& vec, const T& other_vec)
 {
   for (size_t i = 0; i < T::size; i++)
@@ -55,7 +57,7 @@ T& operator-=(T& vec, const T& other_vec)
   return vec;
 }
 
-template<typename T, REQUIRE(Vector, T)>
+template<typename T, REQUIRE_INSTANCE(Vector, T)>
 T operator+(const T& lhs, const T& rhs)
 {
   T result_vec {lhs};
@@ -64,7 +66,7 @@ T operator+(const T& lhs, const T& rhs)
   return result_vec;
 }
 
-template<typename T, REQUIRE(Vector, T)>
+template<typename T, REQUIRE_INSTANCE(Vector, T)>
 T operator-(const T& lhs, const T& rhs)
 {
   T result_vec {lhs};
@@ -73,7 +75,7 @@ T operator-(const T& lhs, const T& rhs)
   return result_vec;
 }
 
-template<typename T, REQUIRE(Vector, T)>
+template<typename T, REQUIRE_INSTANCE(Vector, T)>
 T& operator*=(T& vec, const T& other_vec)
 {
   for (size_t i = 0; i < T::size; i++)
@@ -81,7 +83,7 @@ T& operator*=(T& vec, const T& other_vec)
   return vec;
 }
 
-template<typename T, REQUIRE(Vector, T)>
+template<typename T, REQUIRE_INSTANCE(Vector, T)>
 T operator*(const T& lhs, const T& rhs)
 {
   T result_vec {lhs};
@@ -90,7 +92,7 @@ T operator*(const T& lhs, const T& rhs)
   return result_vec;
 }
 
-template<typename T, REQUIRE(Vector, T)>
+template<typename T, REQUIRE_INSTANCE(Vector, T)>
 T& operator*=(T::component_t s, T& vec)
 {
   for (auto& e : vec.data)
@@ -98,7 +100,7 @@ T& operator*=(T::component_t s, T& vec)
   return vec;
 }
 
-template<typename T, REQUIRE(Vector, T)>
+template<typename T, REQUIRE_INSTANCE(Vector, T)>
 T operator*(T::component_t s, const T& rhs)
 {
   T result_vec {rhs};
@@ -107,7 +109,7 @@ T operator*(T::component_t s, const T& rhs)
   return result_vec;
 }
 
-template<typename T, REQUIRE(Vector, T)>
+template<typename T, REQUIRE_INSTANCE(Vector, T)>
 T::component_t dot(const T& vec1, const T& vec2)
 {
   auto result = static_cast<T::component_t>(0);
@@ -115,8 +117,4 @@ T::component_t dot(const T& vec1, const T& vec2)
     result += vec1[i] * vec2[i];
   return result;
 }
-
-
-
-
 
