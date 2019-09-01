@@ -8,13 +8,13 @@ template<typename S>
 struct Rgb
 {
   static constexpr size_t size = 3;
-  using component_t = S;
-  std::array<component_t, size> data;
-  const component_t& r;
-  const component_t& g;
-  const component_t& b;
+  using Scalar = S;
+  std::array<Scalar, size> data;
+  const Scalar& r;
+  const Scalar& g;
+  const Scalar& b;
 
-  explicit Rgb(component_t s)
+  explicit Rgb(Scalar s)
     : data {s, s, s}
     , r (data[0])
     , g (data[1])
@@ -28,7 +28,7 @@ struct Rgb
     , b (data[2])
   {}
 
-  Rgb(component_t s1, component_t s2, component_t s3)
+  Rgb(Scalar s1, Scalar s2, Scalar s3)
     : data {s1, s2, s3}
     , r (data[0])
     , g (data[1])

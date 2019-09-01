@@ -8,14 +8,14 @@ template<typename S>
 struct Vector3
 {
   static constexpr size_t size = 3;
-  using component_t = S;
+  using Scalar = S;
 
-  std::array<component_t, size> data;
-  const component_t& x;
-  const component_t& y;
-  const component_t& z;
+  std::array<Scalar, size> data;
+  const Scalar& x;
+  const Scalar& y;
+  const Scalar& z;
 
-  explicit Vector3(component_t s)
+  explicit Vector3(Scalar s)
     : data {s, s, s}
     , x (data[0])
     , y (data[1])
@@ -29,7 +29,7 @@ struct Vector3
     , z (data[2])
   {}
 
-  Vector3(component_t s1, component_t s2, component_t s3)
+  Vector3(Scalar s1, Scalar s2, Scalar s3)
     : data {s1, s2, s3}
     , x (data[0])
     , y (data[1])
