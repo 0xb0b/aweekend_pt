@@ -1,12 +1,29 @@
 #pragma once
 
+/* template<typename Typeclass, typename T> */
+// struct Instance
+// {};
+// 
+// #define INSTANCE(Typeclass, T) template<> struct Instance<Typeclass, T> {using type = T;};
+// 
+/* #define REQUIRE_INSTANCE(Typeclass, T) typename = typename Instance<Typeclass, T>::type */
+
 template<typename Typeclass, typename T>
 struct Instance
-{}
+{
+  static constexpr bool value = false;
+};
 
-#define INSTANCE(Typeclass, T) template<> struct Instance<Typeclass, T> {using type = T;};
+template<typename Typeclass, typename T>
+struct Require
+{
+  using type = void;
+  static_assert(Instance<Typeclass, T>::value, "type has to be instance of typeclass");
+};
 
-#define REQUIRE_INSTANCE(Typeclass, T) typename = Instance<Typeclass, T>::type
+#define INSTANCE(Typeclass, T) template<> struct Instance<Typeclass, T> {static constexpr bool value = true;};
+
+#define REQUIRE_INSTANCE(Typeclass, T) typename = typename Require<Typeclass, T>::type
 
 /* auxiliary type to express typeclass constraints (value metafunction)
 template<typename Typeclass, typename T>

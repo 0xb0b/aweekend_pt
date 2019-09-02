@@ -1,8 +1,8 @@
 #pragma once
 
 #include <array>
-#include "typeclass.h"
-#include "vector.h"
+#include <typeclass.h>
+#include <vector.h>
 
 template<typename S>
 struct Rgb
