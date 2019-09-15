@@ -14,6 +14,9 @@ struct Instance
   static constexpr bool value = false;
 };
 
+#define MAKE_INSTANCE(Typeclass, T) template<> \
+struct Instance<Typeclass, T> {static constexpr bool value = true;};
+
 template<typename Typeclass, typename T>
 struct Require
 {
@@ -21,41 +24,20 @@ struct Require
   static_assert(Instance<Typeclass, T>::value, "type has to be instance of typeclass");
 };
 
-#define INSTANCE(Typeclass, T) template<> struct Instance<Typeclass, T> {static constexpr bool value = true;};
-
 #define REQUIRE_INSTANCE(Typeclass, T) typename = typename Require<Typeclass, T>::type
 
-/* auxiliary type to express typeclass constraints (value metafunction)
-template<typename Typeclass, typename T>
-struct Instance
-{
-  static constexpr bool value = false;
-}
-
-   - define type X
-   - specialize Instance for concrete typeclass (e.g. Eq) and X:
-       template<>
-       struct Instance<Eq, X>
-       {
-         static constexpr bool value = true;
-       };
-     may define macro for this:
-#define INSTANCE(Typeclass, T) = template<> struct Instance<Typeclass, T> {static constexpr bool value = true;};
-
-function to check typeclass constraints:
-     requireInstance<Eq, X>();
-   or define macro:
-#define REQUIRE_INSTANCE(Typeclass, T) = static_assert(Instance<Typeclass, T>::value, "");
-
-template<typename Typeclass, typename T>
-constexpr void requireInstance()
-{
-  static_assert(Instance<Typeclass, T>::value, "");
-}
-*/
+/* using require = int; */
+// 
+// template<typename Typeclass, typename T>
+// constexpr require instance()
+// {
+  // static_assert(Instance<Typeclass, T>::value, "type has to be instance of typeclass");
+  // return 0;
+/* } */
 
 /*
 open questions:
     - how to automatically generate interface functions for ADTs?
       like default operator== for a type that consists of Eq types
 */
+

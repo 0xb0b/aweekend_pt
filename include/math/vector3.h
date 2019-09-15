@@ -41,10 +41,11 @@ template<typename S>
 Vector3<S> cross(const Vector3<S>& vec1, const Vector3<S>& vec2)
 {
   return {vec1.y * vec2.z - vec1.z * vec2.y,
-          vec1.z * vec2.x - vec1.x * vec2.z, 
+          vec1.z * vec2.x - vec1.x * vec2.z,
           vec1.x * vec2.y - vec1.y * vec2.x};
 }
 
 using Vector3f = Vector3<float>;
-INSTANCE(Vector, Vector3f);
+
+MAKE_INSTANCE(Vector, Vector3f);
 
