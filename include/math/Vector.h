@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cmath>
-#include <array>
+#include "Array.h"
 
 /* typeclass implementation, looks like overkill for vector
 
@@ -144,11 +144,11 @@ T operator*(typename T::Scalar s, const T& v)
 }
 */
 
+struct VectorTag
+{};
+
 template<size_t dim, typename T>
-struct Vector
-{
-  std::array<T, dim> data;
-};
+using Vector = Array<VectorTag, dim, T>;
 
 // Vector interface
 
@@ -175,12 +175,6 @@ void normalize(Vector<dim, T>& v)
   const auto k = static_cast<T>(1) / norm(v);
   for (auto& e : v.data)
     e *= k;
-}
-
-template<size_t dim, typename T>
-T elem(const Vector<dim, T>& v, size_t i)
-{
-  return v.data[i];
 }
 
 template<size_t dim, typename T>
@@ -252,20 +246,20 @@ Vector<dim, T> operator*(T s, const Vector<dim, T>& v)
 }
 
 template<typename T>
-struct Vector<3, T>
+struct Array<VectorTag, 3, T>
 {
   std::array<T, 3> data;
 
-  explicit Vector(T s)
+  explicit Array(T s)
     : data {s, s, s}
   {}
 
-  Vector(const Vector& other)
+  Array(const Vector<3, T>& other)
     : data {other.data[0], other.data[1], other.data[2]}
   {}
 
-  Vector(T s1, T s2, T s3)
-    : data {s1, s2, s3}
+  Array(T x, T y, T z)
+    : data {x, y, z}
   {}
 };
 

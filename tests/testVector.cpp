@@ -1,5 +1,5 @@
 #include <catch2/catch.hpp>
-#include "math/vector.h"
+#include "math/Vector.h"
 
 TEST_CASE("Vector interface", "[vector]")
 {
