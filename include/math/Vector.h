@@ -144,131 +144,85 @@ T operator*(typename T::Scalar s, const T& v)
 }
 */
 
-struct VectorTag
+struct AsVector
 {};
 
-template<size_t dim, typename T>
-using Vector = Array<VectorTag, dim, T>;
+template<size_t dim, typename ElemT>
+using Vector = Array<AsVector, dim, ElemT>;
+
 
 // Vector interface
 
-template<size_t dim, typename T>
-T dot(const Vector<dim, T>& a, const Vector<dim, T>& b)
+template<size_t dim, typename ElemT>
+ElemT dot(const Vector<dim, ElemT>& a, const Vector<dim, ElemT>& b)
 {
-  auto result = static_cast<T>(0);
+  auto result = static_cast<ElemT>(0);
   for (size_t i = 0; i < dim; i++)
     result += a.data[i] * b.data[i];
   return result;
 }
 
-template<size_t dim, typename T>
-T norm(const Vector<dim, T>& v)
+template<size_t dim, typename ElemT>
+ElemT norm(const Vector<dim, ElemT>& v)
 {
   return std::sqrt(dot(v, v));
 }
 
-template<size_t dim, typename T>
-void normalize(Vector<dim, T>& v)
+template<size_t dim, typename ElemT>
+void normalize(Vector<dim, ElemT>& v)
 {
   // TODO check for zero length?
-  // const auto k = T::Scalar::one / length(vec);
-  const auto k = static_cast<T>(1) / norm(v);
-  for (auto& e : v.data)
-    e *= k;
+  const auto k = static_cast<ElemT>(1) / norm(v);
+  v *= k;
 }
 
-template<size_t dim, typename T>
-Vector<dim, T>& operator+=(Vector<dim, T>& this_v, const Vector<dim, T>& other_v)
-{
-  for (size_t i = 0; i < dim; i++)
-    this_v.data[i] += other_v.data[i];
-  return this_v;
-}
 
-template<size_t dim, typename T>
-Vector<dim, T>& operator-=(Vector<dim, T>& this_v, const Vector<dim, T>& other_v)
+template<typename ElemT>
+struct Array<AsVector, 3, ElemT>
 {
-  for (size_t i = 0; i < dim; i++)
-    this_v.data[i] -= other_v.data[i];
-  return this_v;
-}
+  std::array<ElemT, 3> data;
 
-template<size_t dim, typename T>
-Vector<dim, T> operator+(const Vector<dim, T>& a, const Vector<dim, T>& b)
-{
-  auto result {a};
-  for (size_t i = 0; i < dim; i++)
-    result.data[i] += b.data[i];
-  return result;
-}
+  Array()
+    : data {static_cast<ElemT>(0), static_cast<ElemT>(0), static_cast<ElemT>(0)}
+  {}
 
-template<size_t dim, typename T>
-Vector<dim, T> operator-(const Vector<dim, T>& a, const Vector<dim, T>& b)
-{
-  auto result {a};
-  for (size_t i = 0; i < dim; i++)
-    result.data[i] -= b.data[i];
-  return result;
-}
-
-template<size_t dim, typename T>
-Vector<dim, T>& operator*=(Vector<dim, T>& this_v, const Vector<dim, T>& other_v)
-{
-  for (size_t i = 0; i < dim; i++)
-    this_v.data[i] *= other_v.data[i];
-  return this_v;
-}
-
-template<size_t dim, typename T>
-Vector<dim, T> operator*(const Vector<dim, T>& a, const Vector<dim, T>& b)
-{
-  auto result {a};
-  for (size_t i = 0; i < dim; i++)
-    result.data[i] *= b.data[i];
-  return result;
-}
-
-template<size_t dim, typename T>
-Vector<dim, T>& operator*=(Vector<dim, T>& v, T s)
-{
-  for (auto& e : v.data)
-    e *= s;
-  return v;
-}
-
-template<size_t dim, typename T>
-Vector<dim, T> operator*(T s, const Vector<dim, T>& v)
-{
-  auto result {v};
-  for (auto& e : result.data)
-    e *= s;
-  return result;
-}
-
-template<typename T>
-struct Array<VectorTag, 3, T>
-{
-  std::array<T, 3> data;
-
-  explicit Array(T s)
+  explicit Array(ElemT s)
     : data {s, s, s}
   {}
 
-  Array(const Vector<3, T>& other)
+  Array(const Vector<3, ElemT>& other)
     : data {other.data[0], other.data[1], other.data[2]}
   {}
 
-  Array(T x, T y, T z)
+  Array(ElemT x, ElemT y, ElemT z)
     : data {x, y, z}
   {}
 };
 
-template<typename T>
-Vector<3, T> cross(const Vector<3, T>& a, const Vector<3, T>& b)
+template<typename ElemT>
+ElemT x(const Vector<3, ElemT>& a)
 {
-  return {a.data[1] * b.data[2] - a.data[2] * b.data[1],
-          a.data[2] * b.data[0] - a.data[0] * b.data[2],
-          a.data[0] * b.data[1] - a.data[1] * b.data[0]};
+  return a.data[0];
+}
+
+template<typename ElemT>
+ElemT y(const Vector<3, ElemT>& a)
+{
+  return a.data[1];
+}
+
+template<typename ElemT>
+ElemT z(const Vector<3, ElemT>& a)
+{
+  return a.data[2];
+}
+
+template<typename ElemT>
+Vector<3, ElemT> cross(const Vector<3, ElemT>& a, const Vector<3, ElemT>& b)
+{
+  return {y(a) * z(b) - z(a) * y(b),
+          z(a) * x(b) - x(a) * z(b),
+          x(a) * y(b) - y(a) * x(b)};
 }
 
 using Vector3f = Vector<3, float>;

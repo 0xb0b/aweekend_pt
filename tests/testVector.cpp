@@ -5,6 +5,16 @@ TEST_CASE("Vector interface", "[vector]")
 {
   Vector3f v {4.0f, 3.0f, 12.0f};
 
+  SECTION("vector's elements can be accessed")
+  {
+    REQUIRE(elem(v, 0) == 4.0f);
+    REQUIRE(elem(v, 1) == 3.0f);
+    REQUIRE(elem(v, 2) == 12.0f);
+    REQUIRE(x(v) == elem(v, 0));
+    REQUIRE(y(v) == elem(v, 1));
+    REQUIRE(z(v) == elem(v, 2));
+  }
+
   SECTION("length of the vector can be calculated")
   {
     REQUIRE(norm(v) == Approx(13.0f));
@@ -16,18 +26,11 @@ TEST_CASE("Vector interface", "[vector]")
     normalize(v);
     REQUIRE(norm(v) == Approx(1.0f));
     // check that the normalized vector has the direction unchanged
-    auto rx = original.data[0] / v.data[0];
-    auto ry = original.data[1] / v.data[1] ;
-    auto rz = original.data[2] / v.data[2];
+    auto rx = x(original) / x(v);
+    auto ry = y(original) / y(v);
+    auto rz = z(original) / z(v);
     REQUIRE(rx == Approx(ry));
     REQUIRE(rx == Approx(rz));
-  }
-
-  SECTION("vector's elements can be accessed")
-  {
-    REQUIRE(elem(v, 0) == Approx(4.0f));
-    REQUIRE(elem(v, 1) == Approx(3.0f));
-    REQUIRE(elem(v, 2) == Approx(12.0f));
   }
 
   SECTION("vectors can be added and subtracted")
@@ -114,21 +117,21 @@ TEST_CASE("Vector3 cross product", "[vector]")
     Vector3f k {0.0f, 0.0f, 1.0f};
     {
       auto a {cross(i, j)};
-      REQUIRE(elem(a, 0) == Approx(elem(k, 0)));
-      REQUIRE(elem(a, 1) == Approx(elem(k, 1)));
-      REQUIRE(elem(a, 2) == Approx(elem(k, 2)));
+      REQUIRE(x(a) == Approx(x(k)));
+      REQUIRE(y(a) == Approx(y(k)));
+      REQUIRE(z(a) == Approx(z(k)));
     }
     {
       auto a {cross(k, i)};
-      REQUIRE(elem(a, 0) == Approx(elem(j, 0)));
-      REQUIRE(elem(a, 1) == Approx(elem(j, 1)));
-      REQUIRE(elem(a, 2) == Approx(elem(j, 2)));
+      REQUIRE(x(a) == Approx(x(j)));
+      REQUIRE(y(a) == Approx(y(j)));
+      REQUIRE(z(a) == Approx(z(j)));
     }
     {
       auto a {cross(j, k)};
-      REQUIRE(elem(a, 0) == Approx(elem(i, 0)));
-      REQUIRE(elem(a, 1) == Approx(elem(i, 1)));
-      REQUIRE(elem(a, 2) == Approx(elem(i, 2)));
+      REQUIRE(x(a) == Approx(x(i)));
+      REQUIRE(y(a) == Approx(y(i)));
+      REQUIRE(z(a) == Approx(z(i)));
     }
   }
 

@@ -4,32 +4,33 @@
 #include "Array.h"
 #include "Vector.h"
 
-struct PointTag
+struct AsPoint
 {};
 
-template<size_t dim, typename T>
-using Point = Array<PointTag, dim, T>;
+template<size_t dim, typename ElemT>
+using Point = Array<AsPoint, dim, ElemT>;
 
-// Point interface
 
-template<size_t dim, typename T>
-Point<dim, T>& operator+=(Point<dim, T>& p, const Vector<dim, T>& v)
+// translate Point by Vector
+
+template<size_t dim, typename ElemT>
+Point<dim, ElemT>& operator+=(Point<dim, ElemT>& p, const Vector<dim, ElemT>& v)
 {
   for (size_t i = 0; i < dim; i++)
     p.data[i] += v.data[i];
   return p;
 }
 
-template<size_t dim, typename T>
-Point<dim, T>& operator-=(Point<dim, T>& p, const Vector<dim, T>& v)
+template<size_t dim, typename ElemT>
+Point<dim, ElemT>& operator-=(Point<dim, ElemT>& p, const Vector<dim, ElemT>& v)
 {
   for (size_t i = 0; i < dim; i++)
     p.data[i] -= v.data[i];
   return p;
 }
 
-template<size_t dim, typename T>
-Point<dim, T> operator+(const Point<dim, T>& p, const Vector<dim, T>& v)
+template<size_t dim, typename ElemT>
+Point<dim, ElemT> operator+(const Point<dim, ElemT>& p, const Vector<dim, ElemT>& v)
 {
   auto result {p};
   for (size_t i = 0; i < dim; i++)
@@ -37,8 +38,8 @@ Point<dim, T> operator+(const Point<dim, T>& p, const Vector<dim, T>& v)
   return result;
 }
 
-template<size_t dim, typename T>
-Point<dim, T> operator-(const Point<dim, T>& p, const Vector<dim, T>& v)
+template<size_t dim, typename ElemT>
+Point<dim, ElemT> operator-(const Point<dim, ElemT>& p, const Vector<dim, ElemT>& v)
 {
   auto result {p};
   for (size_t i = 0; i < dim; i++)
@@ -46,22 +47,21 @@ Point<dim, T> operator-(const Point<dim, T>& p, const Vector<dim, T>& v)
   return result;
 }
 
-// TODO have to define vector from point construction
-/*
-template<size_t dim, typename T>
-Vector<dim, T> operator-(const Point<dim, T>& a, const Point<dim, T>& b)
+// construct Vector connecting two Points
+
+template<size_t dim, typename ElemT>
+Vector<dim, ElemT> operator-(const Point<dim, ElemT>& a, const Point<dim, ElemT>& b)
 {
-  Vector<dim, T> result {a};
+  Vector<dim, ElemT> result;
   for (size_t i = 0; i < dim; i++)
-    result.data[i] -= b.data[i];
+    result.data[i] = a.data[i] - b.data[i];
   return result;
 }
-*/
 
-template<size_t dim, typename T>
-T distance(const Point<dim, T>& a, const Point<dim, T>& b)
+template<size_t dim, typename ElemT>
+ElemT distance(const Point<dim, ElemT>& a, const Point<dim, ElemT>& b)
 {
-  T d_squared = static_cast<T>(0);
+  auto d_squared = static_cast<ElemT>(0);
   for (size_t i = 0; i < dim; i++)
   {
     const auto d = a.data[i] - b.data[i];
@@ -71,20 +71,24 @@ T distance(const Point<dim, T>& a, const Point<dim, T>& b)
 }
 
 
-template<typename T>
-struct Array<PointTag, 3, T>
+template<typename ElemT>
+struct Array<AsPoint, 3, ElemT>
 {
-  std::array<T, 3> data;
+  std::array<ElemT, 3> data;
 
-  explicit Array(T s)
+  Array()
+    : data {static_cast<ElemT>(0), static_cast<ElemT>(0), static_cast<ElemT>(0)}
+  {}
+
+  explicit Array(ElemT s)
     : data {s, s, s}
   {}
 
-  Array(const Point<3, T>& other)
+  Array(const Point<3, ElemT>& other)
     : data {other.data[0], other.data[1], other.data[2]}
   {}
 
-  Array(T x, T y, T z)
+  Array(ElemT x, ElemT y, ElemT z)
     : data {x, y, z}
   {}
 };

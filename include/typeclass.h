@@ -1,5 +1,9 @@
 #pragma once
 
+// !!!
+// similar data implementation with different behavior - template type with tags
+// different data implementation with similar behavior - typeclass
+
 /* template<typename Typeclass, typename T> */
 // struct Instance
 // {};
