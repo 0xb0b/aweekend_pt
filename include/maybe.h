@@ -4,51 +4,37 @@
 
 // maybe just nothing
 
-namespace core
-{
-
-// T has to be default constructible
 template<typename T>
 struct Maybe
 {
 private:
-  bool isNothing;
+  bool initialized;
   T value;
 
-  // Just :: a -> Maybe a
-  friend Maybe<T> Just(T&& value)
-  {
-    return {false, std::forward<T>(value)};
-  }
+  // T has to be default constructible
+  Maybe()
+    : initialized {false}
+  {}
 
-  /* difference with haskell:
+  // TODO add other constructors?
+  Maybe(T&& v)
+    : initialized {true}
+    , value {v}
+  {}
 
-       Prelude> :t Just
-       Just :: a -> Maybe a
-       Prelude> :t Nothing
-       Nothing :: Maybe a
-
-       Nothing in haskell is a value with polymorphic type and not function
-       type like Just;
-       this can not be represented literally in c++
-       so Nothing is represented as a function with no arguments returning
-       polymorphic type */
-  friend Maybe<T> Nothing()
-  {
-    return {true, T()};
-  }
+  // TODO add copy constructor and assignment operator
 
   // fromMaybe :: a -> Maybe a -> a
-  friend T fromMaybe(T defaultValue, Maybe<T> something)
-  {
-    if (something.isNothing)
-      return defaultValue;
-    else
-      return something.value;
-  }
 };
 
-} // namespace core
+template<typename T>
+T fromMaybe(T defaultValue, Maybe<T> something)
+{
+  if (something.initialized)
+    return something.value;
+  else
+    return defaultValue;
+}
 
 
 /* examples:
@@ -56,22 +42,14 @@ private:
 Maybe<int> foo(int x)
 {
   if (x < 0)
-    return Nothing<int>();
+    return;
   else
-    return Just(x);
+    return x;
 }
 
-
-// define nothing for the type to avoid construction on each usage
-constexpr auto nothingInt Nothing<int>();
-
-Maybe<int> foo(int x)
-{
-  if (x < 0)
-    return nothingInt;
-  else
-    return Just(x);
-}
+Maybe<int> a {};
+a = foo(3);
+int y = fromMaybe(0, a);
 
 */
 
