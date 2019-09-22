@@ -12,23 +12,31 @@
 // 
 /* #define REQUIRE_INSTANCE(Typeclass, T) typename = typename Instance<Typeclass, T>::type */
 
-template<typename Typeclass, typename T>
+class Typeclass
+{
+  Typeclass() = delete;
+};
+
+template<typename T>
 struct Instance
 {
   static constexpr bool value = false;
 };
 
-#define MAKE_INSTANCE(Typeclass, T) template<> \
-struct Instance<Typeclass, T> {static constexpr bool value = true;};
+#define INSTANCE(Typeclass, T) template<> \
+struct Instance<Typeclass<T>> {static constexpr bool value = true;};
 
-template<typename Typeclass, typename T>
+#define INSTANCE_TEMPLATE(Typeclass, T, template) template \
+struct Instance<Typeclass<T>> {static constexpr bool value = true;};
+
+template<typename T>
 struct Require
 {
+  static_assert(Instance<T>::value, "typeclass instance required ");
   using type = void;
-  static_assert(Instance<Typeclass, T>::value, "type has to be instance of typeclass");
 };
 
-#define REQUIRE_INSTANCE(Typeclass, T) typename = typename Require<Typeclass, T>::type
+#define REQUIRE_INSTANCE(Typeclass, T) typename = typename Require<Typeclass<T>>::type
 
 /* using require = int; */
 // 

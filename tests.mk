@@ -24,7 +24,7 @@ OBJ_FILES := $(SRC_FILES:%.cpp=$(BUILD_DIR)/%.o)
 DEP_FILES := $(OBJ_FILES:.o=.d)
 
 CXX = clang
-CXXFLAGS = -O2 -std=c++11
+CXXFLAGS = -O2 -std=c++14
 LDFLAGS = -lstdc++ -lm
 
 # flags for automatic dependencies generation
