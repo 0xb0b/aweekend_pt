@@ -3,10 +3,13 @@
 #include <cmath>
 #include "Array.h"
 
+
 struct AsVector {};
 
 template<size_t dim, typename ElemT>
 using Vector = Array<AsVector, dim, ElemT>;
+
+using Vector3f = Vector<3, float>;
 
 
 // Vector specific operations
@@ -27,12 +30,21 @@ ElemT norm(const Vector<dim, ElemT>& v)
 }
 
 template<size_t dim, typename ElemT>
-void normalize(Vector<dim, ElemT>& v)
+Vector<dim, ElemT>& makeUnit(Vector<dim, ElemT>& v)
 {
-  // TODO check for zero length?
-  const auto k = unit<ElemT> / norm(v);
-  v *= k;
+  const auto lsquared = dot(v, v);
+  if (lsquared != zero<ElemT>)
+    return v /= std::sqrt(lsquared);
 }
+
+template<size_t dim, typename ElemT>
+Vector<dim, ElemT> normalized(Vector<dim, ElemT>& v)
+{
+  const auto lsquared = dot(v, v);
+  if (lsquared != zero<ElemT>)
+    return v / std::sqrt(lsquared);
+}
+
 
 // 3d vector
 
@@ -55,30 +67,10 @@ ElemT z(const Vector<dim, ElemT>& a)
 }
 
 template<typename ElemT>
-struct Array<AsVector, 3, ElemT>
-{
-  std::array<ElemT, 3> data;
-
-  constexpr explicit Array(ElemT s)
-    : data {s, s, s}
-  {}
-
-  Array(const Vector<3, ElemT>& other)
-    : data {other.data[0], other.data[1], other.data[2]}
-  {}
-
-  Array(ElemT x, ElemT y, ElemT z)
-    : data {x, y, z}
-  {}
-};
-
-template<typename ElemT>
 Vector<3, ElemT> cross(const Vector<3, ElemT>& a, const Vector<3, ElemT>& b)
 {
   return {y(a) * z(b) - z(a) * y(b),
           z(a) * x(b) - x(a) * z(b),
           x(a) * y(b) - y(a) * x(b)};
 }
-
-using Vector3f = Vector<3, float>;
 

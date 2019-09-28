@@ -1,11 +1,12 @@
 #pragma once
 
 #include <Typeclass.h>
-#include <Eq.h>
 
-template<typename T, REQUIRE_INSTANCE(Eq, T)>
+
+template<typename T>
 class Num final : Typeclass
 {};
+
 
 // typeclass instantiation:
 // INSTANCE(Num, float)
@@ -46,5 +47,6 @@ T operator*(const T&, const T&);
 
 
 INSTANCE(Num, int)
+
 INSTANCE(Num, float)
 

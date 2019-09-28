@@ -2,21 +2,20 @@
 
 #include <Typeclass.h>
 
+
 template<typename T>
 class Eq final : Typeclass
 {};
 
 template<typename T, REQUIRE_INSTANCE(Eq, T)>
-bool operator==(const T& a, const T& b)
-{
-  return !(a != b);
-}
+bool operator==(const T& a, const T& b);
 
 template<typename T, REQUIRE_INSTANCE(Eq, T)>
 bool operator!=(const T& a, const T& b)
 {
   return !(a == b);
 }
+
 
 INSTANCE(Eq, int)
 

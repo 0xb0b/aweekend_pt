@@ -4,10 +4,13 @@
 #include <math/Array.h>
 #include <math/Vector.h>
 
+
 struct AsPoint {};
 
 template<size_t dim, typename ElemT>
 using Point = Array<AsPoint, dim, ElemT>;
+
+using Point3f = Point<3, float>;
 
 
 // translate Point by Vector
@@ -63,7 +66,6 @@ operator-(const Point<dim, ElemT>& a, const Point<dim, ElemT>& b)
   return result;
 }
 
-
 template<size_t dim, typename ElemT>
 ElemT distance(const Point<dim, ElemT>& a, const Point<dim, ElemT>& b)
 {
@@ -75,27 +77,4 @@ ElemT distance(const Point<dim, ElemT>& a, const Point<dim, ElemT>& b)
   }
   return std::sqrt(d_squared);
 }
-
-
-// 3d point
-
-template<typename ElemT>
-struct Array<AsPoint, 3, ElemT>
-{
-  std::array<ElemT, 3> data;
-
-  explicit Array(ElemT s)
-    : data {s, s, s}
-  {}
-
-  Array(const Point<3, ElemT>& other)
-    : data {other.data[0], other.data[1], other.data[2]}
-  {}
-
-  Array(ElemT x, ElemT y, ElemT z)
-    : data {x, y, z}
-  {}
-};
-
-using Point3f = Point<3, float>;
 

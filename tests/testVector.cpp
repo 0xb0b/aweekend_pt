@@ -1,6 +1,7 @@
 #include <catch2/catch.hpp>
 #include <math/Vector.h>
 
+
 TEST_CASE("Vector in 3d space", "[vector]")
 {
   Vector3f v {4.0f, 3.0f, 12.0f};
