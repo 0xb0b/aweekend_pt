@@ -3,8 +3,7 @@
 #include <cmath>
 #include "Array.h"
 
-struct AsVector
-{};
+struct AsVector {};
 
 template<size_t dim, typename ElemT>
 using Vector = Array<AsVector, dim, ElemT>;
@@ -35,17 +34,32 @@ void normalize(Vector<dim, ElemT>& v)
   v *= k;
 }
 
+// 3d vector
+
+template<size_t dim, typename ElemT>
+ElemT x(const Vector<dim, ElemT>& a)
+{
+  return a.data[0];
+}
+
+template<size_t dim, typename ElemT>
+ElemT y(const Vector<dim, ElemT>& a)
+{
+  return a.data[1];
+}
+
+template<size_t dim, typename ElemT>
+ElemT z(const Vector<dim, ElemT>& a)
+{
+  return a.data[2];
+}
 
 template<typename ElemT>
 struct Array<AsVector, 3, ElemT>
 {
   std::array<ElemT, 3> data;
 
-  Array()
-    : data {zero<ElemT>, zero<ElemT>, zero<ElemT>}
-  {}
-
-  explicit Array(ElemT s)
+  constexpr explicit Array(ElemT s)
     : data {s, s, s}
   {}
 
@@ -57,24 +71,6 @@ struct Array<AsVector, 3, ElemT>
     : data {x, y, z}
   {}
 };
-
-template<typename ElemT>
-ElemT x(const Vector<3, ElemT>& a)
-{
-  return a.data[0];
-}
-
-template<typename ElemT>
-ElemT y(const Vector<3, ElemT>& a)
-{
-  return a.data[1];
-}
-
-template<typename ElemT>
-ElemT z(const Vector<3, ElemT>& a)
-{
-  return a.data[2];
-}
 
 template<typename ElemT>
 Vector<3, ElemT> cross(const Vector<3, ElemT>& a, const Vector<3, ElemT>& b)

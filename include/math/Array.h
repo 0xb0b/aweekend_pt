@@ -9,17 +9,40 @@ struct Array
   std::array<ElemT, dim> data;
 };
 
-INSTANCE_TEMPLATE(Num, Array<Tag, dim, ElemT>, template<typename Tag, size_t dim, typename ElemT>)
+template<typename Tag, size_t dim, typename ElemT>
+struct Instance<Eq<Array<Tag, dim, ElemT> > >
+{
+  static constexpr bool value = true;
+};
+
+template<typename Tag, size_t dim, typename ElemT>
+struct Instance<Num<Array<Tag, dim, ElemT> > >
+{
+  static constexpr bool value = true;
+};
+
+
+// Eq interface
+
+template<typename Tag, size_t dim, typename ElemT>
+bool operator==(const Array<Tag, dim, ElemT>& a, const Array<Tag, dim, ElemT>& b)
+{
+  for (size_t i = 0; i < dim; i++)
+    if (a.data[i] != b.data[i])
+      return false;
+  return true;
+}
 
 
 // Num interface
 
 template<typename Tag, size_t dim, typename ElemT>
-constexpr Array<Tag, dim, ElemT> zero {};
+constexpr Array<Tag, dim, ElemT>
+zero<Array<Tag, dim, ElemT> > {zero<ElemT>};
 
 template<typename Tag, size_t dim, typename ElemT>
-constexpr Array<Tag, dim, ElemT> unit {unit<ElemT>};
-
+constexpr Array<Tag, dim, ElemT>
+unit<Array<Tag, dim, ElemT> > {unit<ElemT>};
 
 template<typename Tag, size_t dim, typename ElemT>
 Array<Tag, dim, ElemT>&

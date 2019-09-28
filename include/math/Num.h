@@ -1,8 +1,9 @@
 #pragma once
 
 #include <typeclass.h>
+#include <Eq.h>
 
-template<typename T>
+template<typename T, REQUIRE_INSTANCE(Eq, T)>
 class Num final : Typeclass
 {};
 

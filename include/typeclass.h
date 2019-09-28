@@ -17,17 +17,19 @@ class Typeclass
   Typeclass() = delete;
 };
 
+// Instance is the compile time function over types which is false (0) except when it is
+// true (1) for the types which are instances of a typeclass
 template<typename T>
 struct Instance
 {
   static constexpr bool value = false;
 };
 
-#define INSTANCE(Typeclass, T) template<> \
-struct Instance<Typeclass<T>> {static constexpr bool value = true;};
+#define INSTANCE(typeclass, a) template<> \
+struct Instance<typeclass<a>> {static constexpr bool value = true;};
 
-#define INSTANCE_TEMPLATE(Typeclass, T, template) template \
-struct Instance<Typeclass<T>> {static constexpr bool value = true;};
+#define INSTANCE_TEMPLATE(typeclass, a, template_decl) template \
+struct Instance<typeclass<a>> {static constexpr bool value = true;};
 
 template<typename T>
 struct Require
@@ -36,7 +38,7 @@ struct Require
   using type = void;
 };
 
-#define REQUIRE_INSTANCE(Typeclass, T) typename = typename Require<Typeclass<T>>::type
+#define REQUIRE_INSTANCE(typeclass, a) typename = typename Require<typeclass<a>>::type
 
 /* using require = int; */
 // 
