@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cmath>
-#include "Array.h"
-#include "Vector.h"
+#include <math/Array.h>
+#include <math/Vector.h>
 
 struct AsPoint {};
 

@@ -1,5 +1,5 @@
 #include <catch2/catch.hpp>
-#include "math/Vector.h"
+#include <math/Vector.h>
 
 TEST_CASE("Vector in 3d space", "[vector]")
 {

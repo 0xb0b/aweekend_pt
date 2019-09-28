@@ -1,5 +1,5 @@
 #include <catch2/catch.hpp>
-#include "math/Point.h"
+#include <math/Point.h>
 
 TEST_CASE("Point in 3d space", "[point]")
 {

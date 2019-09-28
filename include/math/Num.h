@@ -1,6 +1,6 @@
 #pragma once
 
-#include <typeclass.h>
+#include <Typeclass.h>
 #include <Eq.h>
 
 template<typename T, REQUIRE_INSTANCE(Eq, T)>

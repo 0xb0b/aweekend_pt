@@ -1,7 +1,7 @@
 #pragma once
 
 #include <array>
-#include "Num.h"
+#include <math/Num.h>
 
 template<typename Tag, size_t dim, typename ElemT, REQUIRE_INSTANCE(Num, ElemT)>
 struct Array

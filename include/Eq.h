@@ -1,6 +1,6 @@
 #pragma once
 
-#include <typeclass.h>
+#include <Typeclass.h>
 
 template<typename T>
 class Eq final : Typeclass
