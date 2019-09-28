@@ -102,7 +102,7 @@ operator*(const Array<Tag, dim, ElemT>& a, const Array<Tag, dim, ElemT>& b)
 }
 
 
-// multiplication by scalar
+// multiplication by a scalar
 
 template<typename Tag, size_t dim, typename ElemT>
 Array<Tag, dim, ElemT>&
@@ -121,5 +121,23 @@ operator*(ElemT s, const Array<Tag, dim, ElemT>& a)
   for (auto& e : result.data)
     e *= s;
   return result;
+}
+
+template<typename Tag, size_t dim, typename ElemT>
+Array<Tag, dim, ElemT>&
+operator/=(Array<Tag, dim, ElemT>& a, ElemT s)
+{
+  auto k = unit<ElemT> / s;
+  a *= k;
+  return a;
+}
+
+template<typename Tag, size_t dim, typename ElemT>
+Array<Tag, dim, ElemT>
+operator/(ElemT s, const Array<Tag, dim, ElemT>& a)
+{
+  auto result {a};
+  auto k = unit<ElemT> / s;
+  return k * result;
 }
 
