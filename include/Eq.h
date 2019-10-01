@@ -8,7 +8,7 @@ class Eq final : Typeclass
 {};
 
 template<typename T, REQUIRE_INSTANCE(Eq, T)>
-bool operator==(const T& a, const T& b);
+bool operator==(const T&, const T&);
 
 template<typename T, REQUIRE_INSTANCE(Eq, T)>
 bool operator!=(const T& a, const T& b)

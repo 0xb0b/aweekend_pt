@@ -21,7 +21,7 @@ TEST_CASE("Vector in 3d space", "[vector]")
   SECTION("vector can be normalized in place")
   {
     const Vector3f original {v};
-    normalize(v);
+    makeUnit(v);
     REQUIRE(norm(v) == Approx(1.0f));
     // check that the normalized vector has the direction unchanged
     auto rx = x(original) / x(v);
@@ -29,6 +29,28 @@ TEST_CASE("Vector in 3d space", "[vector]")
     auto rz = z(original) / z(v);
     REQUIRE(rx == Approx(ry));
     REQUIRE(rx == Approx(rz));
+  }
+
+  SECTION("normalized vector can be obtained from other vector")
+  {
+    const auto u { normalized(v) };
+    REQUIRE(norm(u) == Approx(1.0f));
+    // check that the normalized vector has the direction unchanged
+    auto rx = x(u) / x(v);
+    auto ry = y(u) / y(v);
+    auto rz = z(u) / z(v);
+    REQUIRE(rx == Approx(ry));
+    REQUIRE(rx == Approx(rz));
+  }
+
+  SECTION("zero vector is unchanged if normalized")
+  {
+    auto u { zero<Vector3f> };
+    makeUnit(u);
+    REQUIRE(u == zero<Vector3f>);
+
+    const auto w { normalized(u) };
+    REQUIRE(w == zero<Vector3f>);
   }
 
   SECTION("vectors can be added and subtracted")

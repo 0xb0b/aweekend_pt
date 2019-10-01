@@ -34,7 +34,8 @@ Vector<dim, ElemT>& makeUnit(Vector<dim, ElemT>& v)
 {
   const auto lsquared = dot(v, v);
   if (lsquared != zero<ElemT>)
-    return v /= std::sqrt(lsquared);
+    v /= std::sqrt(lsquared);
+  return v;
 }
 
 template<size_t dim, typename ElemT>
@@ -43,6 +44,8 @@ Vector<dim, ElemT> normalized(Vector<dim, ElemT>& v)
   const auto lsquared = dot(v, v);
   if (lsquared != zero<ElemT>)
     return v / std::sqrt(lsquared);
+  else
+    return v;
 }
 
 
