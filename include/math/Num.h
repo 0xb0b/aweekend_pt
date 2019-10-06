@@ -3,6 +3,8 @@
 #include <Typeclass.h>
 
 
+// TODO move to separate place with all typeclasses?
+
 template<typename T>
 class Num final : Typeclass
 {};
@@ -21,32 +23,54 @@ constexpr T zero = static_cast<T>(0);
 template<typename T, REQUIRE_INSTANCE(Num, T)>
 constexpr T unit = static_cast<T>(1);
 
-template<typename T, REQUIRE_INSTANCE(Num, T)>
-T& operator+=(T&, const T&);
+
+// methods
 
 template<typename T, REQUIRE_INSTANCE(Num, T)>
-T operator+(const T&, const T&);
+T& operator+=(T&, const T&);
 
 template<typename T, REQUIRE_INSTANCE(Num, T)>
 T& operator-=(T&, const T&);
 
 template<typename T, REQUIRE_INSTANCE(Num, T)>
-T operator-(const T&, const T&);
+T& operator*=(T&, const T&);
 
 template<typename T, REQUIRE_INSTANCE(Num, T)>
-T operator-(const T& a)
+T& operator/=(T&, const T&);
+
+
+template<typename T, REQUIRE_INSTANCE(Num, T)>
+T operator+(T a, const T& b)
+{
+  return a += b;
+}
+
+template<typename T, REQUIRE_INSTANCE(Num, T)>
+T operator-(T a, const T& b)
+{
+  return a -= b;
+}
+
+template<typename T, REQUIRE_INSTANCE(Num, T)>
+T operator*(T a, const T& b)
+{
+  return a *= b;
+}
+
+template<typename T, REQUIRE_INSTANCE(Num, T)>
+T operator/(T a, const T& b)
+{
+  return a /= b;
+}
+
+template<typename T, REQUIRE_INSTANCE(Num, T)>
+T operator-(T a)
 {
   return zero<T> - a;
 }
 
-template<typename T, REQUIRE_INSTANCE(Num, T)>
-T& operator*=(T&, const T&);
 
-template<typename T, REQUIRE_INSTANCE(Num, T)>
-T operator*(const T&, const T&);
-
-
+// primitive types
 INSTANCE(Num, int)
-
 INSTANCE(Num, float)
 

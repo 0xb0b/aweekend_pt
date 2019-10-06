@@ -30,22 +30,20 @@ ElemT norm(const Vector<dim, ElemT>& v)
 }
 
 template<size_t dim, typename ElemT>
-Vector<dim, ElemT>& makeUnit(Vector<dim, ElemT>& v)
+Vector<dim, ElemT>&
+normalize_m(Vector<dim, ElemT>& v)
 {
   const auto lsquared = dot(v, v);
   if (lsquared != zero<ElemT>)
-    v /= std::sqrt(lsquared);
+    scale_m(v, unit<ElemT> / std::sqrt(lsquared));
   return v;
 }
 
 template<size_t dim, typename ElemT>
-Vector<dim, ElemT> normalized(Vector<dim, ElemT>& v)
+Vector<dim, ElemT>
+normalize(Vector<dim, ElemT> v)
 {
-  const auto lsquared = dot(v, v);
-  if (lsquared != zero<ElemT>)
-    return v / std::sqrt(lsquared);
-  else
-    return v;
+  return normalize_m(v);
 }
 
 
@@ -72,8 +70,8 @@ ElemT z(const Vector<dim, ElemT>& a)
 template<typename ElemT>
 Vector<3, ElemT> cross(const Vector<3, ElemT>& a, const Vector<3, ElemT>& b)
 {
-  return {y(a) * z(b) - z(a) * y(b),
-          z(a) * x(b) - x(a) * z(b),
-          x(a) * y(b) - y(a) * x(b)};
+  return {a.data[1] * b.data[2] - a.data[2] * b.data[1],
+          a.data[2] * b.data[0] - a.data[0] * b.data[2],
+          a.data[0] * b.data[1] - a.data[1] * b.data[0]};
 }
 

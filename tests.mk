@@ -59,8 +59,5 @@ $(BUILD_DIR)/%.o: %.cpp
 	$(CXX) $(DEPFLAGS) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 	mv -f $(BUILD_DIR)/$*.tmpd $(BUILD_DIR)/$*.d && touch $@
 
-.PHONY: clean
-clean:
-	@rm -rf $(BUILD_DIR)
-
 -include $(DEP_FILES)
+

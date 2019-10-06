@@ -4,33 +4,30 @@
 #include <math/Vector.h>
 
 
-template<size_t dim, typename S>
 struct Ray
 {
   enum struct Tag : int8_t { primary };
 
   Tag type;
-  Point<dim, S> origin;
-  Vector<dim, S> direction;
+  Point3f origin;
+  Vector3f direction;
 
-  explicit Ray(Vector<dim, S> v, Tag t = Tag::primary)
+  explicit Ray(Vector3f v, Tag t = Tag::primary)
     : type {t}
-    , origin {zero<Point<dim, S>>}
-    , direction {normalized(v)}
+    , origin {zero<Point3f>}
+    , direction {normalize_m(v)}
   {}
 
-  Ray(Point<dim, S> p, Vector<dim, S> v, Tag t = Tag::primary)
+  Ray(Point3f p, Vector3f v, Tag t = Tag::primary)
     : type {t}
     , origin {p}
-    , direction {normalized(v)}
+    , direction {normalize_m(v)}
   {}
 
-  Ray(Point<dim, S> a, Point<dim, S> b, Tag t = Tag::primary)
+  Ray(Point3f a, Point3f b, Tag t = Tag::primary)
     : type {t}
     , origin {a}
-    , direction {normalized(b - a)}
+    , direction {normalize(toVector(b - a))}
   {}
 };
-
-using Ray3f = Ray<3, float>;
 

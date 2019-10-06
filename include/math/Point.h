@@ -13,11 +13,36 @@ using Point = Array<AsPoint, dim, ElemT>;
 using Point3f = Point<3, float>;
 
 
+// construct Point from Vector
+
+template<size_t dim, typename ElemT>
+Point<dim, ElemT>
+toPoint(const Vector<dim, ElemT>& v)
+{
+  auto result {zero<Point<dim, ElemT>>};
+  for (size_t i = 0; i < dim; i++)
+    result.data[i] = v.data[i];
+  return result;
+}
+
+// construct Vector from Point
+
+template<size_t dim, typename ElemT>
+Vector<dim, ElemT>
+toVector(const Point<dim, ElemT>& p)
+{
+  auto result {zero<Vector<dim, ElemT>>};
+  for (size_t i = 0; i < dim; i++)
+    result.data[i] = p.data[i];
+  return result;
+}
+
+
 // translate Point by Vector
 
 template<size_t dim, typename ElemT>
 Point<dim, ElemT>&
-operator+=(Point<dim, ElemT>& p, const Vector<dim, ElemT>& v)
+translate_m(Point<dim, ElemT>& p, const Vector<dim, ElemT>& v)
 {
   for (size_t i = 0; i < dim; i++)
     p.data[i] += v.data[i];
@@ -25,46 +50,12 @@ operator+=(Point<dim, ElemT>& p, const Vector<dim, ElemT>& v)
 }
 
 template<size_t dim, typename ElemT>
-Point<dim, ElemT>&
-operator-=(Point<dim, ElemT>& p, const Vector<dim, ElemT>& v)
-{
-  for (size_t i = 0; i < dim; i++)
-    p.data[i] -= v.data[i];
-  return p;
-}
-
-template<size_t dim, typename ElemT>
 Point<dim, ElemT>
-operator+(const Point<dim, ElemT>& p, const Vector<dim, ElemT>& v)
+translate(Point<dim, ElemT> p, const Vector<dim, ElemT>& v)
 {
-  auto result {p};
-  for (size_t i = 0; i < dim; i++)
-    result.data[i] += v.data[i];
-  return result;
+  return translate_m(p, v);
 }
 
-template<size_t dim, typename ElemT>
-Point<dim, ElemT>
-operator-(const Point<dim, ElemT>& p, const Vector<dim, ElemT>& v)
-{
-  auto result {p};
-  for (size_t i = 0; i < dim; i++)
-    result.data[i] -= v.data[i];
-  return result;
-}
-
-
-// Vector connecting two Points
-
-template<size_t dim, typename ElemT>
-Vector<dim, ElemT>
-operator-(const Point<dim, ElemT>& a, const Point<dim, ElemT>& b)
-{
-  auto result {zero<Vector<dim, ElemT>>};
-  for (size_t i = 0; i < dim; i++)
-    result.data[i] = a.data[i] - b.data[i];
-  return result;
-}
 
 template<size_t dim, typename ElemT>
 ElemT distance(const Point<dim, ElemT>& a, const Point<dim, ElemT>& b)
@@ -76,5 +67,25 @@ ElemT distance(const Point<dim, ElemT>& a, const Point<dim, ElemT>& b)
     d_squared += d * d;
   }
   return std::sqrt(d_squared);
+}
+
+// 3d point
+
+template<size_t dim, typename ElemT>
+ElemT x(const Point<dim, ElemT>& p)
+{
+  return p.data[0];
+}
+
+template<size_t dim, typename ElemT>
+ElemT y(const Point<dim, ElemT>& p)
+{
+  return p.data[1];
+}
+
+template<size_t dim, typename ElemT>
+ElemT z(const Point<dim, ElemT>& p)
+{
+  return p.data[2];
 }
 

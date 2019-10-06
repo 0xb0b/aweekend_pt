@@ -1,95 +1,113 @@
 #pragma once
 
+#include <Eq.h>
+#include <Ord.h>
 #include <math/Array.h>
+#include <math/Num.h>
+
+
+struct Channelf
+{
+  float value;
+
+  explicit constexpr Channelf(float c)
+    : value {c}
+  {
+    if (value < 0.0f)
+      value = 0.0f;
+    else if (value > 1.0f)
+      value = 1.0f;
+  }
+
+  constexpr Channelf(const Channelf& other)
+    : value {other.value}
+  {}
+};
+
+
+INSTANCE(Eq, Channelf)
+
+bool operator==(const Channelf&, const Channelf&);
+
+
+INSTANCE(Ord, Channelf)
+
+bool operator<=(const Channelf&, const Channelf&);
+
+
+INSTANCE(Num, Channelf)
+
+template<>
+constexpr Channelf zero<Channelf> {0.0f};
+
+template<>
+constexpr Channelf unit<Channelf> {1.0f};
+
+Channelf& operator+=(Channelf&, const Channelf&);
+
+Channelf& operator-=(Channelf&, const Channelf&);
+
+Channelf& operator*=(Channelf&, const Channelf&);
+
+Channelf& operator/=(Channelf&, const Channelf&);
 
 
 struct AsColor {};
 
+// TODO specialize Array template to add constructors from floats and maybe from Rgb
+
 // RGB color
+using Color3 = Array<AsColor, 3, Channelf>;
 
-using Rgb = Array<AsColor, 3, float>
-
-template<>
-struct Array<AsColor, 3, float>
-{
-  std::array<float, 3> data;
-
-  constexpr explicit Array(float s)
-    : data {clamp(s, 0.0f, 1.0f), clamp(s, 0.0f, 1.0f), clamp(s, 0.0f, 1.0f)}
-  {}
-
-  Array(const Rgb& other)
-    : data {other.data[0], other.data[1], other.data[2]}
-  {}
-
-  Array(float r, float g, float b)
-    : data {clamp(r, 0.0f, 1.0f), clamp(g, 0.0f, 1.0f), clamp(b, 0.0f, 1.0f)}
-  {}
-};
-
-
-float r(const Rgb& c)
-{
-  return c.data[0];
-}
-
-float g(const Rgb& c)
-{
-  return c.data[1];
-}
-
-float b(const Rgb& c)
-{
-  return c.data[2];
-}
+float r(const Color3&);
+float g(const Color3&);
+float b(const Color3&);
 
 
 // RGBA color
+using Color4 = Array<AsColor, 4, Channelf>;
 
-using Rgba = Array<AsColor, 4, float>
+float r(const Color4&);
+float g(const Color4&);
+float b(const Color4&);
+float a(const Color4&);
 
-template<>
-struct Array<AsColor, 4, float>
+
+struct Rgb
 {
-  std::array<float, 4> data;
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
 
-  constexpr explicit Array(float s)
-    : data {clamp(s, 0.0f, 1.0f), clamp(s, 0.0f, 1.0f), clamp(s, 0.0f, 1.0f),
-            1.0f}
-  {}
+  explicit Rgb(uint8_t);
 
-  Array(const Rgb& other, float a)
-    : data {other.data[0], other.data[1], other.data[2], clamp(a, 0.0f, 1.0f)}
-  {}
+  Rgb(uint8_t, uint8_t, uint8_t);
 
-  Array(const Rgba& other)
-    : data {other.data[0], other.data[1], other.data[2], other.data[3]}
-  {}
+  Rgb(const Rgb&);
 
-  Array(float r, float g, float b, float a)
-    : data {clamp(r, 0.0f, 1.0f), clamp(g, 0.0f, 1.0f), clamp(b, 0.0f, 1.0f),
-            clamp(a, 0.0f, 1.0f)}
-  {}
+  explicit Rgb(const Color3&);
+
+  explicit Rgb(const Color4&);
 };
 
 
-float r(const Rgba& c)
+struct Rgba
 {
-  return c.data[0];
-}
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+  uint8_t a;
 
-float g(const Rgba& c)
-{
-  return c.data[1];
-}
+  explicit Rgba(uint8_t);
 
-float b(const Rgba& c)
-{
-  return c.data[2];
-}
+  Rgba(const Rgb&, uint8_t);
 
-float a(const Rgba& c)
-{
-  return c.data[3];
-}
+  Rgba(uint8_t, uint8_t, uint8_t, uint8_t);
+
+  Rgba(const Rgba&);
+
+  Rgba(const Color3&, uint8_t);
+
+  explicit Rgba(const Color4&);
+};
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <Typeclass.h>
 
 
@@ -7,6 +8,8 @@ template<typename T, REQUIRE_INSTANCE(Eq, T)>
 class Ord final : Typeclass
 {};
 
+
+// methods
 
 template<typename T, REQUIRE_INSTANCE(Ord, T)>
 bool operator<=(const T&, const T&);
@@ -48,7 +51,8 @@ T clamp(const T& a, const T& lower, const T& upper)
 }
 
 
+// primitive types
 INSTANCE(Ord, int)
-
+INSTANCE(Ord, uint8_t)
 INSTANCE(Ord, float)
 

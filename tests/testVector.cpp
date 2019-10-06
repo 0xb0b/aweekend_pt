@@ -18,10 +18,16 @@ TEST_CASE("Vector in 3d space", "[vector]")
     REQUIRE(norm(v) == Approx(13.0f));
   }
 
+  SECTION("vector is mutable")
+  {
+    v = Vector3f(1.0f, 2.0f, 3.0f);
+    REQUIRE(v == Vector3f(1.0f, 2.0f, 3.0f));
+  }
+
   SECTION("vector can be normalized in place")
   {
     const Vector3f original {v};
-    makeUnit(v);
+    normalize_m(v);
     REQUIRE(norm(v) == Approx(1.0f));
     // check that the normalized vector has the direction unchanged
     auto rx = x(original) / x(v);
@@ -33,7 +39,7 @@ TEST_CASE("Vector in 3d space", "[vector]")
 
   SECTION("normalized vector can be obtained from other vector")
   {
-    const auto u { normalized(v) };
+    const auto u { normalize(v) };
     REQUIRE(norm(u) == Approx(1.0f));
     // check that the normalized vector has the direction unchanged
     auto rx = x(u) / x(v);
@@ -46,11 +52,11 @@ TEST_CASE("Vector in 3d space", "[vector]")
   SECTION("zero vector is unchanged if normalized")
   {
     auto u { zero<Vector3f> };
-    makeUnit(u);
-    REQUIRE(u == zero<Vector3f>);
 
-    const auto w { normalized(u) };
+    const auto w { normalize(u) };
     REQUIRE(w == zero<Vector3f>);
+
+    REQUIRE(normalize_m(u) == zero<Vector3f>);
   }
 
   SECTION("vectors can be added and subtracted")
@@ -83,10 +89,9 @@ TEST_CASE("Vector in 3d space", "[vector]")
 
   SECTION("vector can be multiplied by scalar")
   {
-    v *= 2.0f;
-    REQUIRE(v == Vector3f(8.0f, 6.0f, 24.0f));
+    REQUIRE(scale_m(v, 2.0f) == Vector3f(8.0f, 6.0f, 24.0f));
 
-    const auto u {0.5f * v};
+    const auto u {scale(v, 0.5f)};
     REQUIRE(u == Vector3f(4.0f, 3.0f, 12.0f));
   }
 
