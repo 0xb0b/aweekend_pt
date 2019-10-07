@@ -1,87 +1,95 @@
 #include <cmath>
+#include <iostream>
 #include <light/Color.h>
 
 
-// instance Eq Channelf
+/* // instance Eq Channelf */
+// 
+// bool operator==(const Channelf& a, const Channelf& b)
+// {
+  // return a.value == b.value;
+// }
+// 
+// // instance Ord Channelf
+// 
+// bool operator<=(const Channelf& a, const Channelf& b)
+// {
+  // return a.value <= b.value;
+// }
+// 
+// // instance Num Channelf
+// 
+// Channelf& operator+=(Channelf& a, const Channelf& b)
+// {
+  // a.value = min(1.0f, a.value + b.value);
+  // return a;
+// }
+// 
+// Channelf& operator-=(Channelf& a, const Channelf& b)
+// {
+  // a.value = max(0.0f, a.value - b.value);
+  // return a;
+// }
+// 
+// Channelf& operator*=(Channelf& a, const Channelf& b)
+// {
+  // a.value *= b.value;
+  // return a;
+// }
+// 
+// Channelf& operator/=(Channelf& a, const Channelf& b)
+// {
+  // if (b.value == 0.0f)
+    // a.value = 1.0f;
+  // else
+    // a.value = min(1.0f, a.value / b.value);
+  // return a;
+/* } */
 
-bool operator==(const Channelf& a, const Channelf& b)
-{
-  return a.value == b.value;
-}
-
-// instance Ord Channelf
-
-bool operator<=(const Channelf& a, const Channelf& b)
-{
-  return a.value <= b.value;
-}
-
-// instance Num Channelf
-
-Channelf& operator+=(Channelf& a, const Channelf& b)
-{
-  a.value = min(1.0f, a.value + b.value);
-  return a;
-}
-
-Channelf& operator-=(Channelf& a, const Channelf& b)
-{
-  a.value = max(0.0f, a.value - b.value);
-  return a;
-}
-
-Channelf& operator*=(Channelf& a, const Channelf& b)
-{
-  a.value *= b.value;
-  return a;
-}
-
-Channelf& operator/=(Channelf& a, const Channelf& b)
-{
-  if (b.value == 0.0f)
-    a.value = 1.0f;
-  else
-    a.value = min(1.0f, a.value / b.value);
-  return a;
-}
 
 // Color3
 
 float r(const Color3& c)
 {
-  return c.data[0].value;
+  return c.data[0];
 }
 
 float g(const Color3& c)
 {
-  return c.data[1].value;
+  return c.data[1];
 }
 
 float b(const Color3& c)
 {
-  return c.data[2].value;
+  return c.data[2];
+}
+
+std::ostream& operator<<(std::ostream& out, const Color3& color)
+{
+  out << "Color3 (" << r(color) << ", " << g(color) << ", " << b(color) << ")\n";
+  return out;
 }
 
 // Color4
 
 float r(const Color4& c)
 {
-  return c.data[0].value;
+  return c.data[0];
 }
 
 float g(const Color4& c)
 {
-  return c.data[1].value;
+  return c.data[1];
 }
 
 float b(const Color4& c)
 {
-  return c.data[2].value;
+  return c.data[2];
 }
 
 float a(const Color4& c)
 {
-  return c.data[3].value;
+  return c.data[3];
 }
 
 
@@ -109,15 +117,15 @@ Rgb::Rgb(const Rgb& other)
   {}
 
   Rgb::Rgb(const Color3& c)
-    : r {static_cast<uint8_t>(std::lround(::r(c) * 255.0f))}
-    , g {static_cast<uint8_t>(std::lround(::g(c) * 255.0f))}
-    , b {static_cast<uint8_t>(std::lround(::b(c) * 255.0f))}
+    : r {static_cast<uint8_t>(std::lround(clamp(::r(c), 0.0f, 1.0f) * 255.0f))}
+    , g {static_cast<uint8_t>(std::lround(clamp(::g(c), 0.0f, 1.0f) * 255.0f))}
+    , b {static_cast<uint8_t>(std::lround(clamp(::b(c), 0.0f, 1.0f) * 255.0f))}
   {}
 
   Rgb::Rgb(const Color4& c)
-    : r {static_cast<uint8_t>(std::lround(::r(c) * 255.0f))}
-    , g {static_cast<uint8_t>(std::lround(::g(c) * 255.0f))}
-    , b {static_cast<uint8_t>(std::lround(::b(c) * 255.0f))}
+    : r {static_cast<uint8_t>(std::lround(clamp(::r(c), 0.0f, 1.0f) * 255.0f))}
+    , g {static_cast<uint8_t>(std::lround(clamp(::g(c), 0.0f, 1.0f) * 255.0f))}
+    , b {static_cast<uint8_t>(std::lround(clamp(::b(c), 0.0f, 1.0f) * 255.0f))}
   {}
 
 // 32 bit RGBA color
@@ -151,16 +159,16 @@ Rgba::Rgba(const Rgba& other)
   {}
 
 Rgba::Rgba(const Color3& c, uint8_t alpha)
-    : r {static_cast<uint8_t>(std::lround(::r(c) * 255.0f))}
-    , g {static_cast<uint8_t>(std::lround(::g(c) * 255.0f))}
-    , b {static_cast<uint8_t>(std::lround(::b(c) * 255.0f))}
+    : r {static_cast<uint8_t>(std::lround(clamp(::r(c), 0.0f, 1.0f) * 255.0f))}
+    , g {static_cast<uint8_t>(std::lround(clamp(::g(c), 0.0f, 1.0f) * 255.0f))}
+    , b {static_cast<uint8_t>(std::lround(clamp(::b(c), 0.0f, 1.0f) * 255.0f))}
     , a {clamp(alpha, zero_intensity, full_intensity)}
   {}
 
 Rgba::Rgba(const Color4& c)
-    : r {static_cast<uint8_t>(std::lround(::r(c) * 255.0f))}
-    , g {static_cast<uint8_t>(std::lround(::g(c) * 255.0f))}
-    , b {static_cast<uint8_t>(std::lround(::b(c) * 255.0f))}
-    , a {static_cast<uint8_t>(std::lround(::a(c) * 255.0f))}
+    : r {static_cast<uint8_t>(std::lround(clamp(::r(c), 0.0f, 1.0f) * 255.0f))}
+    , g {static_cast<uint8_t>(std::lround(clamp(::g(c), 0.0f, 1.0f) * 255.0f))}
+    , b {static_cast<uint8_t>(std::lround(clamp(::b(c), 0.0f, 1.0f) * 255.0f))}
+    , a {static_cast<uint8_t>(std::lround(clamp(::a(c), 0.0f, 1.0f) * 255.0f))}
   {}
 

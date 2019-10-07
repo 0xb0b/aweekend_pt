@@ -2,16 +2,17 @@
 
 #include <utility>
 
+
 // maybe just nothing
 
 template<typename T>
 struct Maybe
 {
-private:
   bool initialized;
   T value;
 
   // T has to be default constructible
+  // TODO how to initialize any type (possibly without default constructor)?
   Maybe()
     : initialized {false}
   {}
@@ -22,6 +23,11 @@ private:
     , value {v}
   {}
 
+  operator bool() const
+  {
+    return initialized;
+  }
+
   // TODO add copy constructor and assignment operator
 
   // fromMaybe :: a -> Maybe a -> a
@@ -30,7 +36,7 @@ private:
 template<typename T>
 T fromMaybe(T defaultValue, Maybe<T> something)
 {
-  if (something.initialized)
+  if (something)
     return something.value;
   else
     return defaultValue;

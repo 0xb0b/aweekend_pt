@@ -1,6 +1,45 @@
+#include <cmath>
 #include <iostream>
+#include <random>
+#include <utility>
+
 #include <Camera.h>
 
+
+namespace
+{
+
+std::pair<float, float> stdrandom()
+{
+  static std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+  static std::mt19937 generator;
+  static bool initialized = false;
+  if (!initialized)
+  {
+    generator.seed(42);
+    initialized = true;
+  }
+  return {distribution(generator), distribution(generator)};
+}
+
+std::pair<float, float> quasirandom()
+{
+  // http://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
+  static const float seed = 0.5f;
+  static const float g = 1.32471795724474602596;
+  static const float a = 1.0f / g;
+  static const float b = a / g;
+  static float na = seed;
+  static float nb = seed;
+  na += a;
+  nb += b;
+  float _;
+  float x = modff(na, &_);
+  float y = modff(nb, &_);
+  return {x, y};
+}
+
+}
 
 // https://pacoup.com/2011/06/12/list-of-true-169-resolutions/
 // some good 16:9 resolutions:
@@ -33,7 +72,7 @@ Camera::Camera(Point3f pos, Vector3f lookVec, Vector3f upVec, int xres, int yres
   xresolution = xres;
   yresolution = yres;
 
-  flength = static_cast<float>(yresolution) / tan(toRadian(yfov).value / 2);
+  flength = static_cast<float>(yresolution) / std::tan(toRadian(yfov).value / 2);
 
   position = pos;
 
@@ -69,10 +108,12 @@ Camera::Camera(Point3f pos, Point3f lookAtPoint, Vector3f upVec, int xres, int y
 
 Ray generateRay(const Camera& cam, int i, int j)
 {
-  float x = (2 * i + 1 - cam.xresolution) / 2;
-  float y = (cam.yresolution - 2 * j - 1) / 2;
+  // steer direction to the random point inside the screen pixel
+  // const auto sample = quasirandom();
+  const auto sample = stdrandom();
+  auto x = static_cast<float>(i) - cam.xresolution / 2.0f + sample.first;
+  auto y = cam.yresolution / 2.0f - static_cast<float>(j) - sample.second;
   auto direction {cam.look};
-  // steer direction to the center of the screen pixel
   direction += scale(cam.up, y);
   direction += scale(cam.right, x);
   return {cam.position, direction};
