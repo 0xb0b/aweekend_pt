@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
+#include <random>
 #include <vector>
 
 #include <Camera.h>
@@ -28,7 +29,6 @@ struct Sphere
 using ObjList = std::vector<Sphere>;
 
 
-
 struct Intersection
 {
   float parameter;
@@ -48,6 +48,28 @@ struct Intersection
 };
 
 
+// TODO make sampling module
+float stdrandom(float minVal = 0.0f, float maxVal = 1.0f)
+{
+  static std::uniform_real_distribution<float> distribution(minVal, maxVal);
+  static std::mt19937 generator;
+  static bool initialized = false;
+  if (!initialized)
+  {
+    generator.seed(42);
+    initialized = true;
+  }
+  return distribution(generator);
+}
+
+Vector3f randomInUnitSphereByRej()
+{
+  Vector3f a {stdrandom(-1.0f, 1.0f), stdrandom(-1.0f, 1.0f), stdrandom(-1.0f, 1.0f)};
+  while (dot(a, a) > 1.0f)
+    a = Vector3f(stdrandom(), stdrandom(), stdrandom());
+  return a;
+}
+
 Maybe<Intersection> intersect(const Ray& r, const Sphere& obj)
 {
   const auto centerToRayOrigin {toVector(r.origin - obj.center)};
@@ -61,9 +83,11 @@ Maybe<Intersection> intersect(const Ray& r, const Sphere& obj)
     const float t = (- b - sqrt(discriminant)) / a;
     if (t > 0.0f)
     {
-      const auto intersectionPoint {translate(r.origin, scale(r.direction, t))};
+      auto intersectionPoint {translate(r.origin, scale(r.direction, t))};
       auto normal {toVector(intersectionPoint - obj.center)};
       normalize_m(normal);
+      // move intersection point slightly so it is not inside the sphere due to numerical error
+      // translate_m(intersectionPoint, scale(normal, 0.001f));
       return Intersection(t, intersectionPoint, normal);
     }
   }
@@ -89,23 +113,32 @@ Maybe<Intersection> intersect(const Ray& r, const ObjList& scene)
 
 Color3 colorize(const Ray& r, const ObjList& scene)
 {
-  // background
-  const auto kup = 0.5f * (1.0f + z(r.direction));
-  const auto white = unit<Color3>;
-  const auto blue = Color3(0.1f, 0.2f, 0.8f);
-  const auto red = Color3(0.8f, 0.2f, 0.1f);
-  auto color = mix(white, blue, kup);
+  static const auto white = unit<Color3>;
+  static const auto blue = Color3(0.1f, 0.2f, 0.8f);
+  static const auto red = Color3(0.8f, 0.2f, 0.1f);
+  static float attenuation = 0.5f;
 
   const auto maybeIntersection = intersect(r, scene);
   if (maybeIntersection)
   {
-    auto n {maybeIntersection.value.normal};
-    n += unit<Vector3f>;
-    scale_m(n, 0.5f);
-    color = Color3(x(n), y(n), z(n));
+    const auto& n = maybeIntersection.value.normal;
+    const auto& p = maybeIntersection.value.point;
+    auto scatterDir {n};
+    scatterDir += randomInUnitSphereByRej();
+    // infinite recursion!
+    return scale(colorize(Ray(p, scatterDir), scene), attenuation);
   }
+  else
+  {
+    // background
+    const auto kup = 0.5f * (1.0f + z(r.direction));
+    return mix(white, blue, kup);
+  }
+}
 
-  return color;
+Color3 gammaCorrect(const Color3& color)
+{
+  return {std::sqrt(r(color)), std::sqrt(g(color)), std::sqrt(b(color))};
 }
 
 
@@ -117,27 +150,25 @@ int main()
                     hresolution, vresolution, Degree(90.0f)};
 
   const ObjList scene {{0.5f, Point3f(-2.0f, 0.0f, 0.0f)},
-                       {100.0f, Point3f(-2.0f, 0.0f, -101.0f)}};
+                       {100.0f, Point3f(-2.0f, 0.0f, -100.51f)}};
 
   std::cout << "#dbg " << cam;
   std::ofstream outstream;
   outstream.open("render.ppm");
   outstream << "P3\n" << hresolution << " " << vresolution << "\n255\n";
-  size_t samplesNum = 16;
+  size_t spp = 128;
   for (int j = 0; j < vresolution; j++)
   {
     for (int i = 0; i < hresolution; i++)
     {
       auto color {zero<Color3>};
-      for (size_t s = 0; s < samplesNum; s++)
+      for (size_t s = 0; s < spp; s++)
       {
         const auto ray {generateRay(cam, i, j)};
-        // made the cool color arithmetic. how to accumulate now bleat?!
         color += colorize(ray, scene);
       }
-      // how to average suka?!
-      scale_m(color, 1.0f / samplesNum);
-      const Rgb sdcolor {color};
+      scale_m(color, 1.0f / spp);
+      const Rgb sdcolor {gammaCorrect(color)};
       outstream << static_cast<int>(sdcolor.r) << " " << static_cast<int>(sdcolor.g) << " "
                 << static_cast<int>(sdcolor.b) << "\n";
     }

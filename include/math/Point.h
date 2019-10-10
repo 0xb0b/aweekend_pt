@@ -56,9 +56,8 @@ translate(Point<dim, ElemT> p, const Vector<dim, ElemT>& v)
   return translate_m(p, v);
 }
 
-
 template<size_t dim, typename ElemT>
-ElemT distance(const Point<dim, ElemT>& a, const Point<dim, ElemT>& b)
+ElemT distance2(const Point<dim, ElemT>& a, const Point<dim, ElemT>& b)
 {
   auto d_squared = zero<ElemT>;
   for (size_t i = 0; i < dim; i++)
@@ -66,7 +65,13 @@ ElemT distance(const Point<dim, ElemT>& a, const Point<dim, ElemT>& b)
     const auto d = a.data[i] - b.data[i];
     d_squared += d * d;
   }
-  return std::sqrt(d_squared);
+  return d_squared;
+}
+
+template<size_t dim, typename ElemT>
+ElemT distance(const Point<dim, ElemT>& a, const Point<dim, ElemT>& b)
+{
+  return std::sqrt(distance2(a, b));
 }
 
 // 3d point
