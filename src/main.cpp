@@ -10,48 +10,10 @@
 #include <light/Ray.h>
 
 
-struct Sphere
-{
-  float radius;
-  Point3f center;
-
-  explicit Sphere(float r)
-    : radius {r}
-    , center {zero<Point3f>}
-  {}
-
-  Sphere(float r, Point3f p)
-    : radius {r}
-    , center {p}
-  {}
-};
-
-using ObjList = std::vector<Sphere>;
-
-
-struct Intersection
-{
-  float parameter;
-  Point3f point;
-  Vector3f normal;
-
-  Intersection()
-    : point {zero<Point3f>}
-    , normal {zero<Vector3f>}
-  {}
-
-  Intersection(float t, Point3f p, Vector3f n)
-    : parameter {t}
-    , point {p}
-    , normal {n}
-  {}
-};
-
-
 // TODO make sampling module
 float stdrandom(float minVal = 0.0f, float maxVal = 1.0f)
 {
-  static std::uniform_real_distribution<float> distribution(minVal, maxVal);
+  static std::uniform_real_distribution<float> sampleDistribution(minVal, maxVal);
   static std::mt19937 generator;
   static bool initialized = false;
   if (!initialized)
@@ -59,7 +21,7 @@ float stdrandom(float minVal = 0.0f, float maxVal = 1.0f)
     generator.seed(42);
     initialized = true;
   }
-  return distribution(generator);
+  return sampleDistribution(generator);
 }
 
 Vector3f randomInUnitSphereByRej()
@@ -70,7 +32,121 @@ Vector3f randomInUnitSphereByRej()
   return a;
 }
 
-Maybe<Intersection> intersect(const Ray& r, const Sphere& obj)
+
+struct ScatterInfo
+{
+  Color3 albedo;
+  Vector3f direction;
+
+  ScatterInfo(Color3 a, Vector3f d)
+    : albedo {a}
+    , direction {d}
+  {}
+};
+
+// Material<Lambertian>(diffuseMaterials[0]);
+
+struct Material
+{
+  // Maybe<HitInfo> requires default constructible through HitInfo::material
+  Material() = default;
+
+  template<typename T>
+  explicit Material(const T& m)
+    : handle {&m}
+    , dispatch {&invoke<T>}
+  {}
+
+  template<typename T>
+  static ScatterInfo invoke(const void* handle, const Vector3f& incident, const Vector3f& normal)
+  {
+    const auto& m = *(static_cast<const T*>(handle));
+    return scatter(incident, normal, m);
+  }
+
+  // type is erased!
+  const void* handle;
+  ScatterInfo (*dispatch)(const void*, const Vector3f&, const Vector3f&);
+};
+
+struct Lambertian
+{
+  Color3 albedo;
+
+  explicit Lambertian(Color3 a)
+    : albedo {a}
+  {}
+};
+
+struct HitInfo
+{
+  float parameter;
+  Point3f point;
+  Vector3f normal;
+  Material material;
+
+  // Maybe<HitInfo> requires default constructible
+  HitInfo()
+    : point {zero<Point3f>}
+    , normal {zero<Vector3f>}
+  {}
+
+  HitInfo(float t, Point3f p, Vector3f n, Material m)
+    : parameter {t}
+    , point {p}
+    , normal {n}
+    , material {std::move(m)}
+  {}
+};
+
+struct Procedural
+{
+  template<typename T>
+  explicit Procedural(const T& obj)
+    : handle {&obj}
+    , dispatch {&invoke<T>}
+  {}
+
+  template<typename T>
+  static Maybe<HitInfo> invoke(const void* handle, const Ray& r)
+  {
+    const auto& obj = *(static_cast<const T*>(handle));
+    return intersect(r, obj);
+  }
+
+  // type is erased!
+  const void* handle;
+  Maybe<HitInfo> (*dispatch)(const void*, const Ray&);
+};
+
+using ObjList = std::vector<Procedural>;
+
+struct Sphere
+{
+  float radius;
+  Point3f center;
+  Material material;
+
+  explicit Sphere(float r, Material m)
+    : radius {r}
+    , center {zero<Point3f>}
+    , material {std::move(m)}
+  {}
+
+  Sphere(float r, Point3f p, Material m)
+    : radius {r}
+    , center {p}
+    , material {std::move(m)}
+  {}
+};
+
+
+Maybe<HitInfo> intersect(const Ray& r, const Procedural& obj)
+{
+  return (*obj.dispatch)(obj.handle, r);
+}
+
+Maybe<HitInfo> intersect(const Ray& r, const Sphere& obj)
 {
   const auto centerToRayOrigin {toVector(r.origin - obj.center)};
   const auto a = dot(r.direction, r.direction);
@@ -83,50 +159,62 @@ Maybe<Intersection> intersect(const Ray& r, const Sphere& obj)
     const float t = (- b - sqrt(discriminant)) / a;
     if (t > 0.0f)
     {
-      auto intersectionPoint {translate(r.origin, scale(r.direction, t))};
-      auto normal {toVector(intersectionPoint - obj.center)};
-      normalize_m(normal);
+      auto hitPoint {translate(r.origin, scale(r.direction, t))};
+      auto normal {toVector(hitPoint - obj.center)};
+      scale_m(normal, 1.0f / obj.radius);
       // move intersection point slightly so it is not inside the sphere due to numerical error
       // translate_m(intersectionPoint, scale(normal, 0.001f));
-      return Intersection(t, intersectionPoint, normal);
+      return HitInfo(t, hitPoint, normal, obj.material);
     }
   }
   return {};
 }
 
-Maybe<Intersection> intersect(const Ray& r, const ObjList& scene)
+ScatterInfo scatter(const Vector3f incident, const Vector3f normal, const Material& m)
+{
+  return (*m.dispatch)(m.handle, incident, normal);
+}
+
+ScatterInfo scatter(const Vector3f incident, const Vector3f normal, const Lambertian& m)
+{
+  auto nextRayDir {normal};
+  // TODO what happens if this is (approximately)zero vector?
+  nextRayDir += randomInUnitSphereByRej();
+  return {m.albedo, nextRayDir};
+}
+
+Maybe<HitInfo> intersect(const Ray& r, const ObjList& world)
 {
   float closest_t = std::numeric_limits<float>::max();
-  Maybe<Intersection> x;
-  for (size_t i = 0; i < scene.size(); i++)
+  Maybe<HitInfo> x;
+  for (size_t i = 0; i < world.size(); i++)
   {
-    const auto& object = scene.at(i);
-    const auto maybeIntersection = intersect(r, object);
-    if (maybeIntersection && maybeIntersection.value.parameter < closest_t)
+    const auto& object = world.at(i);
+    const auto maybeHit = intersect(r, object);
+    if (maybeHit && maybeHit.value.parameter < closest_t)
     {
-      x = maybeIntersection;
+      x = maybeHit;
       closest_t = x.value.parameter;
     }
   }
   return x;
 }
 
-Color3 colorize(const Ray& r, const ObjList& scene)
+Color3 trace(const Ray& r, const ObjList& world)
 {
   static const auto white = unit<Color3>;
   static const auto blue = Color3(0.1f, 0.2f, 0.8f);
   static const auto red = Color3(0.8f, 0.2f, 0.1f);
-  static float attenuation = 0.5f;
 
-  const auto maybeIntersection = intersect(r, scene);
-  if (maybeIntersection)
+  const auto maybeHit = intersect(r, world);
+  if (maybeHit)
   {
-    const auto& n = maybeIntersection.value.normal;
-    const auto& p = maybeIntersection.value.point;
-    auto scatterDir {n};
-    scatterDir += randomInUnitSphereByRej();
+    const auto& hit = maybeHit.value;
+    const auto interaction {scatter(r.direction, hit.normal, hit.material)};
     // infinite recursion!
-    return scale(colorize(Ray(p, scatterDir), scene), attenuation);
+    const Ray nextRay {hit.point, interaction.direction};
+    auto incoming {trace(nextRay, world)};
+    return incoming * interaction.albedo;
   }
   else
   {
@@ -149,14 +237,21 @@ int main()
   const Camera cam {zero<Point3f>, Vector3f(-1.0f, 0.0f, 0.0f), Vector3f(0.0f, 0.0f, 1.0f),
                     hresolution, vresolution, Degree(90.0f)};
 
-  const ObjList scene {{0.5f, Point3f(-2.0f, 0.0f, 0.0f)},
-                       {100.0f, Point3f(-2.0f, 0.0f, -100.51f)}};
+  const std::vector<Lambertian> diffuseMaterials { Lambertian(Color3(0.7f, 0.7f, 0.3f)),
+                                                   Lambertian(Color3(0.3f, 0.3f, 0.3f)) };
+
+  const std::vector<Sphere> spheres {
+    {0.5f, Point3f(-2.0f, 0.0f, 0.0f), Material(diffuseMaterials[0])},
+    {100.0f, Point3f(-2.0f, 0.0f, -100.5f), Material(diffuseMaterials[1])} };
+
+  const ObjList world { Procedural(spheres[0]), Procedural(spheres[1]) };
 
   std::cout << "#dbg " << cam;
   std::ofstream outstream;
   outstream.open("render.ppm");
   outstream << "P3\n" << hresolution << " " << vresolution << "\n255\n";
-  size_t spp = 128;
+  size_t spp = 16;
+  float reciprocalSpp = 1.0f / spp;
   for (int j = 0; j < vresolution; j++)
   {
     for (int i = 0; i < hresolution; i++)
@@ -165,9 +260,9 @@ int main()
       for (size_t s = 0; s < spp; s++)
       {
         const auto ray {generateRay(cam, i, j)};
-        color += colorize(ray, scene);
+        color += trace(ray, world);
       }
-      scale_m(color, 1.0f / spp);
+      scale_m(color, reciprocalSpp);
       const Rgb sdcolor {gammaCorrect(color)};
       outstream << static_cast<int>(sdcolor.r) << " " << static_cast<int>(sdcolor.g) << " "
                 << static_cast<int>(sdcolor.b) << "\n";
