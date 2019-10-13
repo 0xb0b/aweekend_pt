@@ -10,6 +10,9 @@
 #include <light/Ray.h>
 
 
+const int maxDepth = 4;
+
+
 // TODO make sampling module
 float stdrandom(float minVal = 0.0f, float maxVal = 1.0f)
 {
@@ -74,6 +77,15 @@ struct Lambertian
   Color3 albedo;
 
   explicit Lambertian(Color3 a)
+    : albedo {a}
+  {}
+};
+
+struct Metallic
+{
+  Color3 albedo;
+
+  explicit Metallic(Color3 a)
     : albedo {a}
   {}
 };
@@ -183,6 +195,13 @@ ScatterInfo scatter(const Vector3f incident, const Vector3f normal, const Lamber
   return {m.albedo, nextRayDir};
 }
 
+ScatterInfo scatter(const Vector3f incident, const Vector3f normal, const Metallic& m)
+{
+  auto nextRayDir {incident};
+  nextRayDir -= scale(normal, 2 * dot(incident, normal));
+  return {m.albedo, nextRayDir};
+}
+
 Maybe<HitInfo> intersect(const Ray& r, const ObjList& world)
 {
   float closest_t = std::numeric_limits<float>::max();
@@ -200,11 +219,14 @@ Maybe<HitInfo> intersect(const Ray& r, const ObjList& world)
   return x;
 }
 
-Color3 trace(const Ray& r, const ObjList& world)
+Color3 trace(const Ray& r, const ObjList& world, int depth=0)
 {
   static const auto white = unit<Color3>;
   static const auto blue = Color3(0.1f, 0.2f, 0.8f);
   static const auto red = Color3(0.8f, 0.2f, 0.1f);
+
+  if (depth == maxDepth)
+    return zero<Color3>;
 
   const auto maybeHit = intersect(r, world);
   if (maybeHit)
@@ -213,7 +235,7 @@ Color3 trace(const Ray& r, const ObjList& world)
     const auto interaction {scatter(r.direction, hit.normal, hit.material)};
     // infinite recursion!
     const Ray nextRay {hit.point, interaction.direction};
-    auto incoming {trace(nextRay, world)};
+    auto incoming {trace(nextRay, world, ++depth)};
     return incoming * interaction.albedo;
   }
   else
@@ -237,14 +259,20 @@ int main()
   const Camera cam {zero<Point3f>, Vector3f(-1.0f, 0.0f, 0.0f), Vector3f(0.0f, 0.0f, 1.0f),
                     hresolution, vresolution, Degree(90.0f)};
 
-  const std::vector<Lambertian> diffuseMaterials { Lambertian(Color3(0.7f, 0.7f, 0.3f)),
+  const std::vector<Lambertian> diffuseMaterials { Lambertian(Color3(0.7f, 0.3f, 0.3f)),
                                                    Lambertian(Color3(0.3f, 0.3f, 0.3f)) };
+  const std::vector<Metallic> metalMaterials { Metallic(Color3(0.8f, 0.6f, 0.2f)),
+                                               Metallic(Color3(0.8f, 0.8f, 0.8f)) };
 
   const std::vector<Sphere> spheres {
     {0.5f, Point3f(-2.0f, 0.0f, 0.0f), Material(diffuseMaterials[0])},
-    {100.0f, Point3f(-2.0f, 0.0f, -100.5f), Material(diffuseMaterials[1])} };
+    {100.0f, Point3f(-2.0f, 0.0f, -100.5f), Material(diffuseMaterials[1])},
+    {0.8f, Point3f(-2.0f, 1.3f, 0.3f), Material(metalMaterials[0])},
+    {0.4f, Point3f(-2.0f, -0.9f, -0.1f), Material(metalMaterials[1])}
+  };
 
-  const ObjList world { Procedural(spheres[0]), Procedural(spheres[1]) };
+  const ObjList world { Procedural(spheres[0]), Procedural(spheres[1]),
+    Procedural(spheres[2]), Procedural(spheres[3]) };
 
   std::cout << "#dbg " << cam;
   std::ofstream outstream;
