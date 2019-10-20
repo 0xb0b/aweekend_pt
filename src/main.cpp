@@ -11,18 +11,31 @@
 
 
 const float bias = 0.001f;
-const int maxDepth = 4;
+const int maxDepth = 16;
 
 
 // TODO make sampling module
-float stdrandom(float minVal = 0.0f, float maxVal = 1.0f)
+float stdrandom()
 {
-  static std::uniform_real_distribution<float> sampleDistribution(minVal, maxVal);
+  static std::uniform_real_distribution<float> sampleDistribution(0.0f, 1.0f);
   static std::mt19937 generator;
   static bool initialized = false;
   if (!initialized)
   {
-    generator.seed(42);
+    generator.seed(1);
+    initialized = true;
+  }
+  return sampleDistribution(generator);
+}
+
+float stdrandomSymmetric()
+{
+  static std::uniform_real_distribution<float> sampleDistribution(-1.0f, 1.0f);
+  static std::mt19937 generator;
+  static bool initialized = false;
+  if (!initialized)
+  {
+    generator.seed(1);
     initialized = true;
   }
   return sampleDistribution(generator);
@@ -30,9 +43,9 @@ float stdrandom(float minVal = 0.0f, float maxVal = 1.0f)
 
 Vector3f randomInUnitSphereByRej()
 {
-  Vector3f a {stdrandom(-1.0f, 1.0f), stdrandom(-1.0f, 1.0f), stdrandom(-1.0f, 1.0f)};
+  Vector3f a {stdrandomSymmetric(), stdrandomSymmetric(), stdrandomSymmetric()};
   while (dot(a, a) > 1.0f)
-    a = Vector3f(stdrandom(), stdrandom(), stdrandom());
+    a = Vector3f(stdrandomSymmetric(), stdrandomSymmetric(), stdrandomSymmetric());
   return a;
 }
 
@@ -83,6 +96,10 @@ struct Lambertian
 {
   Color3 albedo;
 
+  Lambertian()
+    : albedo {zero<Color3>}
+  {}
+
   explicit Lambertian(Color3 a)
     : albedo {a}
   {}
@@ -92,6 +109,10 @@ struct Metallic
 {
   float fuzzRadius;
   Color3 albedo;
+
+  Metallic()
+    : albedo {zero<Color3>}
+  {}
 
   explicit Metallic(Color3 a, float r = 0.0f)
     : fuzzRadius {r}
@@ -109,6 +130,10 @@ struct Dielectric
   float rSchlick;
   // TODO better name for this? this models how dielectric absorbs the light
   Color3 albedo;
+
+  Dielectric()
+    : albedo {zero<Color3>}
+  {}
 
   explicit Dielectric(float refractionIndex, Color3 a = unit<Color3>)
     : n {refractionIndex}
@@ -144,6 +169,8 @@ struct HitInfo
 
 struct Procedural
 {
+  Procedural() = default;
+
   template<typename T>
   explicit Procedural(const T& obj)
     : handle {&obj}
@@ -192,35 +219,30 @@ Maybe<HitInfo> intersect(const Ray& r, const Procedural& obj)
 Maybe<HitInfo> intersect(const Ray& r, const Sphere& obj)
 {
   const auto centerToRayOrigin {toVector(r.origin - obj.center)};
-  const auto a = dot(r.direction, r.direction);
   const auto b = - dot(centerToRayOrigin, r.direction);
   const auto c = dot(centerToRayOrigin, centerToRayOrigin) - obj.radius * obj.radius;
-  const auto discriminant = b * b - a * c;
-  if (discriminant > 0.0f)
+  const auto d = b * b - c;
+  if (d > 0.0f)
   {
-    const float droot = std::sqrt(discriminant);
+    const float droot = std::sqrt(d);
     // return closest point
     auto x1 = b - droot;
     auto x2 = b + droot;
-    auto t = x1;
     // move slightly forward along the ray (bias) when checking for the intersection point
     // this is for the intersection point do not end up being on the wrong side of the sphere
     // due to the numerical error
-    if (x2 > bias)
-    {
-      if (x1 > bias)
-        t /= a;
-      else
-        t = x2 / a;
-    }
-    else
+    if (x2 < bias)
     {
       return {};
     }
-    auto hitPoint {translate(r.origin, scale(r.direction, t))};
-    auto normal {toVector(hitPoint - obj.center)};
-    scale_m(normal, 1.0f / obj.radius);
-    return HitInfo(t, hitPoint, normal, obj.material);
+    else
+    {
+      auto t = (x1 > bias) ? x1 : x2;
+      auto hitPoint {translate(r.origin, scale(r.direction, t))};
+      auto normal {toVector(hitPoint - obj.center)};
+      scale_m(normal, 1.0f / obj.radius);
+      return HitInfo(t, hitPoint, normal, obj.material);
+    }
   }
   return {};
 }
@@ -305,6 +327,8 @@ Maybe<HitInfo> intersect(const Ray& r, const ObjList& world)
 {
   float closest_t = std::numeric_limits<float>::max();
   Maybe<HitInfo> x;
+  // TODO can not use range-based for here because of instance Eq requirement is not
+  // satisfied for iterator comparison
   for (size_t i = 0; i < world.size(); i++)
   {
     const auto& object = world.at(i);
@@ -321,8 +345,7 @@ Maybe<HitInfo> intersect(const Ray& r, const ObjList& world)
 Color3 trace(const Ray& r, const ObjList& world, int depth=0)
 {
   static const auto white = unit<Color3>;
-  static const auto blue = Color3(0.1f, 0.2f, 0.8f);
-  static const auto red = Color3(0.8f, 0.2f, 0.1f);
+  static const auto blue = Color3(0.5f, 0.7f, 1.0f);
 
   if (depth == maxDepth)
     return zero<Color3>;
@@ -337,7 +360,7 @@ Color3 trace(const Ray& r, const ObjList& world, int depth=0)
       const auto& interaction = maybeInteraction.value;
       const Ray nextRay {hit.point, interaction.direction};
       auto incoming {trace(nextRay, world, ++depth)};
-      return incoming * interaction.albedo;
+      return interaction.albedo * incoming;
     }
     else
     {
@@ -357,15 +380,140 @@ Color3 gammaCorrect(const Color3& color)
   return {std::sqrt(r(color)), std::sqrt(g(color)), std::sqrt(b(color))};
 }
 
+std::vector<Lambertian> generateDiffuseMaterials()
+{
+  std::vector<Lambertian> materials(200);
+  materials[0] = Lambertian(Color3(0.5f, 0.5f, 0.5f));
+  materials[1] = Lambertian(Color3(0.7f, 0.3f, 0.3f));
+  for (size_t i = 2; i < materials.size(); i++)
+  {
+    materials[i] = Lambertian(Color3(stdrandom() * stdrandom(),
+                                     stdrandom() * stdrandom(),
+                                     stdrandom() * stdrandom()));
+  }
+  std::cout << "#dbg diffuse materials generated... " << std::endl;
+  return materials;
+}
+
+std::vector<Metallic> generateMetallicMaterials()
+{
+  std::vector<Metallic> materials(48);
+  materials[0] = Metallic(Color3(0.7f, 0.6f, 0.5f));
+  for (size_t i = 1; i < materials.size(); i++)
+  {
+    materials[i] = Metallic(Color3(0.8f  + 0.2f * stdrandom(),
+                                   0.8f  + 0.2f * stdrandom(),
+                                   0.8f  + 0.2f * stdrandom()), 0.5f * stdrandom());
+  }
+  std::cout << "#dbg metallic materials generated... " << std::endl;
+  return materials;
+}
+
+std::vector<Dielectric> generateDielectricMaterials()
+{
+  std::vector<Dielectric> materials(8);
+  materials[0] = Dielectric(1.5f);
+  for (size_t i = 1; i < materials.size(); i++)
+  {
+    materials[i] = Dielectric(1.2f + 0.8f * stdrandom(),
+                              (stdrandom() > 0.0) ? unit<Color3> :
+                                 Color3(0.5 * (1.0f + stdrandom()),
+                                        0.5 * (1.0f + stdrandom()),
+                                        0.5 * (1.0f + stdrandom())) );
+  }
+  std::cout << "#dbg dielectric materials generated... " << std::endl;
+  return materials;
+}
+
+std::vector<Sphere> generateSpheres(const std::vector<Lambertian>& diffuseMaterials,
+                                    const std::vector<Metallic>& metalMaterials,
+                                    const std::vector<Dielectric>& dielectricMaterials)
+{
+  std::vector<Sphere> spheres;
+  size_t numSpheres = 488;
+  spheres.reserve(numSpheres);
+
+  spheres[0] = Sphere(1000.0f, Point3f(-2.0f, 0.0f, -1000.0f),
+                      Material(diffuseMaterials[0]));
+
+  Point3f center1 {-2.0f, -3.0f, 1.0f};
+  auto radius1 = 1.0f;
+  spheres[1] = Sphere(radius1, center1, Material(diffuseMaterials[1]));
+
+  Point3f center2 {-2.0f, 0.0f, 1.0f};
+  auto radius2 = 1.0f;
+  spheres[2] = Sphere(radius2, center2, Material(dielectricMaterials[0]));
+
+  Point3f center3 {-2.0f, 3.0f, 1.0f};
+  auto radius3 = 1.0f;
+  spheres[3] = Sphere(radius3, center3, Material(metalMaterials[0]));
+
+  size_t index = 4;
+  const float radius = 0.2f;
+  const float xCenter = -2.0f;
+  const float yCenter = 0.0f;
+  for (int a = -11; a < 11; a++)
+  {
+    for (int b = -11; b < 11; b++)
+    {
+      Point3f center {a + 0.9f * stdrandom() + xCenter,
+                      b + 0.9f * stdrandom() + yCenter,
+                      radius};
+      if (distance2(center, center1) < (radius1 + radius) * (radius1 + radius) ||
+          distance2(center, center2) < (radius2 + radius) * (radius2 + radius) ||
+          distance2(center, center3) < (radius3 + radius) * (radius3 + radius))
+        continue;
+
+      float chooseMaterial = stdrandom();
+      if (chooseMaterial < 0.6f)
+      {
+        auto i = std::min(diffuseMaterials.size() - 1,
+            static_cast<size_t>(stdrandom() * diffuseMaterials.size()));
+        spheres[index] = Sphere(radius, center,
+                                Material(diffuseMaterials[i]));
+      }
+      else if (chooseMaterial < 0.8f)
+      {
+        auto i = std::min(metalMaterials.size() - 1,
+            static_cast<size_t>(stdrandom() * metalMaterials.size()));
+        spheres[index] = Sphere(radius, center,
+                                Material(metalMaterials[i]));
+      }
+      else
+      {
+        auto i = std::min(dielectricMaterials.size() - 1,
+            static_cast<size_t>(stdrandom() * dielectricMaterials.size()));
+        spheres[index] = Sphere(radius, center,
+                                Material(dielectricMaterials[i]));
+      }
+      ++index;
+    }
+  }
+  std::cout << "#dbg " << index << " (" << spheres.size() << ") spheres generated... " << std::endl;
+  return spheres;
+}
+
+ObjList randomScene(const std::vector<Sphere>& spheres)
+{
+  ObjList scene(477);
+  for (size_t i = 0; i < scene.size(); i++)
+    scene[i] = Procedural(spheres[i]);
+  return scene;
+}
+
 
 int main()
 {
   int hresolution = 512;
   int vresolution = 288;
-  const Camera cam {Point3f(1.0f, 0.0f, 0.0f),
-                    Vector3f(-1.0f, 0.0f, 0.0f), Vector3f(0.0f, 0.0f, 1.0f),
-                    hresolution, vresolution, Degree(90.0f)};
+  const Camera cam {Point3f(0.8f, 8.0f, 1.5f),
+                    Point3f(-0.5f, 4.0f, 0.8f), Vector3f(0.0f, 0.0f, 1.0f),
+                    hresolution, vresolution, Degree(60.0f), 6.0f, 0.05f};
+/*   const Camera cam {Point3f(10.0f, 10.0f, 10.0f), */
+                    // Vector3f(-1.0f, -1.0f, -0.7f), Vector3f(0.0f, 0.0f, 1.0f),
+                    /* hresolution, vresolution, Degree(90.0f), 2.2f, 0.04f}; */
 
+  /*
   const std::array<Lambertian, 2> diffuseMaterials { Lambertian(Color3(0.7f, 0.3f, 0.3f)),
                                                      Lambertian(Color3(0.3f, 0.3f, 0.3f)) };
   const std::array<Metallic, 2> metalMaterials { Metallic(Color3(0.8f, 0.6f, 0.2f)),
@@ -374,23 +522,31 @@ int main()
     Dielectric(1.5f),
     Dielectric(1.5f, Color3(1.0f, 0.0f, 1.0f)) };
 
-  const std::vector<Sphere> spheres {
-    {0.5f, Point3f(-2.0f, 0.0f, 0.0f), Material(diffuseMaterials[0])},
-    {100.0f, Point3f(-2.0f, 0.0f, -100.5f), Material(diffuseMaterials[1])},
-    // {0.8f, Point3f(-2.0f, 1.3f, 0.3f), Material(metalMaterials[0])},
-    {0.8f, Point3f(-2.0f, 1.3f, 0.3f), Material(dielectricMaterials[0])},
-    // {0.4f, Point3f(-2.0f, -0.9f, -0.1f), Material(metalMaterials[1])}
-    {0.4f, Point3f(-2.0f, -0.9f, -0.1f), Material(dielectricMaterials[1])}
+  const std::array<Sphere, 4> spheres {
+    Sphere(0.5f, Point3f(-2.0f, 0.0f, 0.0f), Material(diffuseMaterials[0])),
+    Sphere(100.0f, Point3f(-2.0f, 0.0f, -100.5f), Material(diffuseMaterials[1])),
+    Sphere(0.8f, Point3f(-2.0f, 1.3f, 0.3f), Material(metalMaterials[0])),
+    // Sphere(0.8f, Point3f(-2.0f, 1.3f, 0.3f), Material(dielectricMaterials[0])),
+    // Sphere(0.4f, Point3f(-2.0f, -0.9f, -0.1f), Material(metalMaterials[1]))
+    Sphere(0.4f, Point3f(-2.0f, -0.9f, -0.1f), Material(dielectricMaterials[1]))
   };
 
   const ObjList world { Procedural(spheres[0]), Procedural(spheres[1]),
     Procedural(spheres[2]), Procedural(spheres[3]) };
+  */
+
+  const auto diffuseMaterials = generateDiffuseMaterials();
+  const auto metalMaterials = generateMetallicMaterials();
+  const auto dielectricMaterials = generateDielectricMaterials();
+  const auto spheres = generateSpheres(diffuseMaterials, metalMaterials, dielectricMaterials);
+  const auto world = randomScene(spheres);
 
   std::cout << "#dbg " << cam;
   std::ofstream outstream;
   outstream.open("render.ppm");
   outstream << "P3\n" << hresolution << " " << vresolution << "\n255\n";
   size_t spp = 16;
+  // size_t spp = 256;
   float reciprocalSpp = 1.0f / spp;
   for (int j = 0; j < vresolution; j++)
   {

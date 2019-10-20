@@ -9,9 +9,9 @@
 namespace
 {
 
-std::pair<float, float> stdrandom()
+Vector2f stdrandom()
 {
-  static std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+  static std::uniform_real_distribution<float> sampleDistribution(0.0f, 1.0f);
   static std::mt19937 generator;
   static bool initialized = false;
   if (!initialized)
@@ -19,10 +19,31 @@ std::pair<float, float> stdrandom()
     generator.seed(42);
     initialized = true;
   }
-  return {distribution(generator), distribution(generator)};
+  return {sampleDistribution(generator), sampleDistribution(generator)};
 }
 
-std::pair<float, float> quasirandom()
+Vector2f stdrandomSymmetric()
+{
+  static std::uniform_real_distribution<float> sampleDistribution(-1.0f, 1.0f);
+  static std::mt19937 generator;
+  static bool initialized = false;
+  if (!initialized)
+  {
+    generator.seed(42);
+    initialized = true;
+  }
+  return {sampleDistribution(generator), sampleDistribution(generator)};
+}
+
+Vector2f randomInUnitDiscByRej()
+{
+  auto a {stdrandomSymmetric()};
+  while (dot(a, a) > 1.0f)
+    a = stdrandomSymmetric();
+  return a;
+}
+
+Vector2f quasirandom()
 {
   // http://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
   static const float seed = 0.5f;
@@ -59,20 +80,28 @@ const int default_yresolution = 288;
 Camera::Camera()
   : xresolution {default_xresolution}
   , yresolution {default_yresolution}
-  , flength { static_cast<float>(yresolution) }
+  // default focal length is 1.0 at vertical fov 90
+  // then pixel size of the sensor is 1.0 / (vertical resolution)
+  // that is, vertical size of the sensor is 1.0
+  , flength {1.0f}
+  , pixelSize {flength / yresolution}
+  , apertureRadius {0.0f}
   , position {0.0f, 0.0f, 10.0f}
-  , look {0.0f, 0.0f, -flength} // down the world z axis
+  , look {0.0f, 0.0f, -1.0f} // down the world z axis
   , up {0.0f, 1.0f, 0.0f}
   , right {1.0f, 0.0f, 0.0f}
 {}
 
 Camera::Camera(Point3f pos, Vector3f lookVec, Vector3f upVec, int xres, int yres,
-               Degree yfov) : Camera()
+               Degree yfov, float f, float aperture) : Camera()
 {
   xresolution = xres;
   yresolution = yres;
 
-  flength = static_cast<float>(yresolution) / std::tan(toRadian(yfov).value / 2);
+  flength = f;
+  pixelSize = f * std::tan(toRadian(yfov).value / 2) / yresolution;
+
+  apertureRadius = aperture / 2;
 
   position = pos;
 
@@ -102,26 +131,36 @@ Camera::Camera(Point3f pos, Vector3f lookVec, Vector3f upVec, int xres, int yres
 }
 
 Camera::Camera(Point3f pos, Point3f lookAtPoint, Vector3f upVec, int xres, int yres,
-               Degree yfov) : Camera(pos, toVector(lookAtPoint - pos), upVec, xres, yres, yfov)
+               Degree yfov, float f, float aperture)
+  : Camera(pos, toVector(lookAtPoint - pos), upVec, xres, yres, yfov, f, aperture)
 {}
 
 
 Ray generateRay(const Camera& cam, int i, int j)
 {
-  // steer direction to the random point inside the screen pixel
   // const auto sample = quasirandom();
-  const auto sample = stdrandom();
-  auto x = static_cast<float>(i) - cam.xresolution / 2.0f + sample.first;
-  auto y = cam.yresolution / 2.0f - static_cast<float>(j) - sample.second;
+  auto origin {cam.position};
+  // steer direction to the random point inside the screen pixel
+  const auto samplePixel = stdrandom();
+  auto u = (static_cast<float>(i) - cam.xresolution / 2.0f + x(samplePixel)) * cam.pixelSize;
+  auto v = (cam.yresolution / 2.0f - static_cast<float>(j) - y(samplePixel)) * cam.pixelSize;
   auto direction {cam.look};
-  direction += scale(cam.up, y);
-  direction += scale(cam.right, x);
-  return {cam.position, direction};
+  direction += scale(cam.right, u);
+  direction += scale(cam.up, v);
+  if (cam.apertureRadius > 0.0f)
+  {
+    auto sampleLens = randomInUnitDiscByRej();
+    scale_m(sampleLens, cam.apertureRadius);
+    const auto shiftVec {scale(cam.right, x(sampleLens)) + scale(cam.up, y(sampleLens))};
+    translate_m(origin, shiftVec);
+    direction -= shiftVec;
+  }
+  return {origin, direction};
 }
 
 std::ostream& operator<<(std::ostream& out, const Camera& cam)
 {
-  out << "Camera\n  resolution: (" << cam.xresolution << "x" << cam.yresolution << ")\n"
+  out << "Camera\n  resolution: " << cam.xresolution << "x" << cam.yresolution << "\n"
       << "  focal length: " << cam.flength << "\n"
       << "  position: (" << x(cam.position) << ", "
                          << y(cam.position) << ", "

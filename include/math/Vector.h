@@ -9,6 +9,7 @@ struct AsVector {};
 template<size_t dim, typename ElemT>
 using Vector = Array<AsVector, dim, ElemT>;
 
+using Vector2f = Vector<2, float>;
 using Vector3f = Vector<3, float>;
 
 

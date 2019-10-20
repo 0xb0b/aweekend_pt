@@ -170,7 +170,25 @@ mix(Array<Tag, dim, ElemT> a, const Array<Tag, dim, ElemT>& b, ElemT k)
 }
 
 
-// define constructors for 3d Array and 4d Array
+// define constructors for 2d, 3d and 4d Array
+
+template<typename Tag, typename ElemT>
+struct Array<Tag, 2, ElemT>
+{
+  std::array<ElemT, 2> data;
+
+  constexpr explicit Array(ElemT s)
+    : data {s, s}
+  {}
+
+  Array(const Array<Tag, 2, ElemT>& other)
+    : data {other.data[0], other.data[1]}
+  {}
+
+  Array(ElemT x, ElemT y)
+    : data {x, y}
+  {}
+};
 
 template<typename Tag, typename ElemT>
 struct Array<Tag, 3, ElemT>

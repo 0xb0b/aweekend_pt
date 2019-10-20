@@ -3,6 +3,9 @@
 #include <cstdint>
 #include <Typeclass.h>
 
+// TODO is it really needed?
+// there are problems e.g. range-based for requires instance Eq for iterators comparison
+// maybe stay with the standard c++ way of treating equality?
 
 template<typename T>
 class Eq final : Typeclass
