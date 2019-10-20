@@ -21,7 +21,7 @@ TEST_CASE("Vector in 3d space", "[vector]")
   SECTION("vector is mutable")
   {
     v = Vector3f(1.0f, 2.0f, 3.0f);
-    REQUIRE(v == Vector3f(1.0f, 2.0f, 3.0f));
+    REQUIRE( eq(v, Vector3f(1.0f, 2.0f, 3.0f)) );
   }
 
   SECTION("vector can be normalized in place")
@@ -54,45 +54,45 @@ TEST_CASE("Vector in 3d space", "[vector]")
     auto u { zero<Vector3f> };
 
     const auto w { normalize(u) };
-    REQUIRE(w == zero<Vector3f>);
+    REQUIRE( eq(w, zero<Vector3f>) );
 
-    REQUIRE(normalize_m(u) == zero<Vector3f>);
+    REQUIRE( eq(normalize_m(u), zero<Vector3f>) );
   }
 
   SECTION("vectors can be added and subtracted")
   {
-    v += {3.0f, 4.0f, -5.0f};
-    REQUIRE(v == Vector3f(7.0f, 7.0f, 7.0f));
+    add_m(v, {3.0f, 4.0f, -5.0f});
+    REQUIRE( eq(v, Vector3f(7.0f, 7.0f, 7.0f)) );
 
-    v -= {3.0f, 2.0f, 1.0f};
-    REQUIRE(v == Vector3f(4.0f, 5.0f, 6.0f));
+    sub_m(v, {3.0f, 2.0f, 1.0f});
+    REQUIRE( eq(v, Vector3f(4.0f, 5.0f, 6.0f)) );
 
     {
-      const auto u {v + Vector3f(0.5f, -0.5f, -1.5f)};
-      REQUIRE(u == Vector3f(4.5f, 4.5f, 4.5f));
+      const auto u {add(v, Vector3f(0.5f, -0.5f, -1.5f))};
+      REQUIRE( eq(u, Vector3f(4.5f, 4.5f, 4.5f)) );
     }
 
     {
-      const auto u {v - Vector3f(0.5f, -0.5f, -1.5f)};
-      REQUIRE(u == Vector3f(3.5f, 5.5f, 7.5f));
+      const auto u {sub(v, Vector3f(0.5f, -0.5f, -1.5f))};
+      REQUIRE( eq(u, Vector3f(3.5f, 5.5f, 7.5f)) );
     }
   }
 
   SECTION("vectors can be multiplied elementwise")
   {
-    v *= {0.5f, 2.0f, 0.25f};
-    REQUIRE(v == Vector3f(2.0f, 6.0f, 3.0f));
+    mul_m(v, {0.5f, 2.0f, 0.25f});
+    REQUIRE( eq(v, Vector3f(2.0f, 6.0f, 3.0f)) );
 
-    const auto u {v * Vector3f(2.0f, 0.0f, 4.0f)};
-    REQUIRE(u == Vector3f(4.0f, 0.0f, 12.0f));
+    const auto u {mul(v, Vector3f(2.0f, 0.0f, 4.0f))};
+    REQUIRE( eq(u, Vector3f(4.0f, 0.0f, 12.0f)) );
   }
 
   SECTION("vector can be multiplied by scalar")
   {
-    REQUIRE(scale_m(v, 2.0f) == Vector3f(8.0f, 6.0f, 24.0f));
+    REQUIRE( eq(scale_m(v, 2.0f), Vector3f(8.0f, 6.0f, 24.0f)) );
 
     const auto u {scale(v, 0.5f)};
-    REQUIRE(u == Vector3f(4.0f, 3.0f, 12.0f));
+    REQUIRE( eq(u, Vector3f(4.0f, 3.0f, 12.0f)) );
   }
 
   SECTION("dot product of vectors can be calculated")
@@ -126,15 +126,15 @@ TEST_CASE("Vector3 cross product", "[vector]")
     Vector3f k {0.0f, 0.0f, 1.0f};
     {
       auto a {cross(i, j)};
-      REQUIRE(a == k);
+      REQUIRE( eq(a, k) );
     }
     {
       auto a {cross(k, i)};
-      REQUIRE(a == j);
+      REQUIRE( eq(a, j) );
     }
     {
       auto a {cross(j, k)};
-      REQUIRE(a == i);
+      REQUIRE( eq(a, i) );
     }
   }
 

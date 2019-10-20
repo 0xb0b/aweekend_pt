@@ -13,7 +13,7 @@ class Mutable final : Typeclass
 
 // "=" assignment operator can not overloaded as a free function
 // due to the idiotic decision to default generate assignment even if no one asked for that
-// this means a separate function has to be provided for bit shifting when needed
+// (a separate function has to be provided for bit shifting when needed)
 template<typename T, REQUIRE_INSTANCE(Mutable, T)>
 T& operator<<(T&, const T&)
 {

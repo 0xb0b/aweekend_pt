@@ -27,46 +27,65 @@ constexpr T unit = static_cast<T>(1);
 // methods
 
 template<typename T, REQUIRE_INSTANCE(Num, T)>
-T& operator+=(T&, const T&);
-
-template<typename T, REQUIRE_INSTANCE(Num, T)>
-T& operator-=(T&, const T&);
-
-template<typename T, REQUIRE_INSTANCE(Num, T)>
-T& operator*=(T&, const T&);
-
-template<typename T, REQUIRE_INSTANCE(Num, T)>
-T& operator/=(T&, const T&);
-
-
-template<typename T, REQUIRE_INSTANCE(Num, T)>
-T operator+(T a, const T& b)
+T& add_m(T& a, const T& b)
 {
   return a += b;
 }
 
 template<typename T, REQUIRE_INSTANCE(Num, T)>
-T operator-(T a, const T& b)
+T& sub_m(T& a, const T& b)
 {
   return a -= b;
 }
 
 template<typename T, REQUIRE_INSTANCE(Num, T)>
-T operator*(T a, const T& b)
+T& mul_m(T& a, const T& b)
 {
   return a *= b;
 }
 
 template<typename T, REQUIRE_INSTANCE(Num, T)>
-T operator/(T a, const T& b)
+T& div_m(T& a, const T& b)
 {
   return a /= b;
 }
 
+
 template<typename T, REQUIRE_INSTANCE(Num, T)>
-T operator-(T a)
+T add(T a, const T& b)
 {
-  return zero<T> - a;
+  return add_m(a, b);
+}
+
+template<typename T, REQUIRE_INSTANCE(Num, T)>
+T sub(T a, const T& b)
+{
+  return sub_m(a, b);
+}
+
+template<typename T, REQUIRE_INSTANCE(Num, T)>
+T mul(T a, const T& b)
+{
+  return mul_m(a, b);
+}
+
+template<typename T, REQUIRE_INSTANCE(Num, T)>
+T div(T a, const T& b)
+{
+  return div_m(a, b);
+}
+
+template<typename T, REQUIRE_INSTANCE(Num, T)>
+T& negate_m(T& a)
+{
+  a = sub(zero<T>, a);
+  return a;
+}
+
+template<typename T, REQUIRE_INSTANCE(Num, T)>
+T negate(T a)
+{
+  return negate_m(a);
 }
 
 

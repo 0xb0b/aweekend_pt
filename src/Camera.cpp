@@ -93,25 +93,21 @@ Camera::Camera()
 {}
 
 Camera::Camera(Point3f pos, Vector3f lookVec, Vector3f upVec, int xres, int yres,
-               Degree yfov, float f, float aperture) : Camera()
+               Degree yfov, float f, float aperture)
+  : xresolution {xres}
+  , yresolution {yres}
+  , flength {f}
+  , pixelSize {f * std::tan(toRadian(yfov).value / 2) / yres}
+  , apertureRadius {aperture / 2}
+  , position {pos}
+  , look {normalize_m(lookVec)}
+  , up {upVec}
+  , right {1.0f, 0.0f, 0.0f}
 {
-  xresolution = xres;
-  yresolution = yres;
-
-  flength = f;
-  pixelSize = f * std::tan(toRadian(yfov).value / 2) / yresolution;
-
-  apertureRadius = aperture / 2;
-
-  position = pos;
-
-  look = normalize_m(lookVec);
-  scale_m(look, flength);
-
   // make up direction to be perpendicular to look direction:
   //   subtract projection of the up vector on the look vector
-  up = upVec - scale_m(lookVec, dot(upVec, lookVec));
-  if (up == zero<Vector3f>)
+  sub_m(up, scale_m(lookVec, dot(upVec, lookVec)));
+  if (eq(up, zero<Vector3f>))
   {
     // degenerate case, up vector is collinear with look vector
     // make up vector to be some vector in a plane for which look is normal
@@ -127,12 +123,13 @@ Camera::Camera(Point3f pos, Vector3f lookVec, Vector3f upVec, int xres, int yres
   normalize_m(up);
 
   right = cross(look, up);
-  normalize_m(right);
+
+  scale_m(look, flength);
 }
 
 Camera::Camera(Point3f pos, Point3f lookAtPoint, Vector3f upVec, int xres, int yres,
                Degree yfov, float f, float aperture)
-  : Camera(pos, toVector(lookAtPoint - pos), upVec, xres, yres, yfov, f, aperture)
+  : Camera(pos, toVector(sub_m(lookAtPoint, pos)), upVec, xres, yres, yfov, f, aperture)
 {}
 
 
@@ -145,15 +142,15 @@ Ray generateRay(const Camera& cam, int i, int j)
   auto u = (static_cast<float>(i) - cam.xresolution / 2.0f + x(samplePixel)) * cam.pixelSize;
   auto v = (cam.yresolution / 2.0f - static_cast<float>(j) - y(samplePixel)) * cam.pixelSize;
   auto direction {cam.look};
-  direction += scale(cam.right, u);
-  direction += scale(cam.up, v);
+  add_m(direction, scale(cam.right, u));
+  add_m(direction, scale(cam.up, v));
   if (cam.apertureRadius > 0.0f)
   {
     auto sampleLens = randomInUnitDiscByRej();
     scale_m(sampleLens, cam.apertureRadius);
-    const auto shiftVec {scale(cam.right, x(sampleLens)) + scale(cam.up, y(sampleLens))};
+    const auto shiftVec {add(scale(cam.right, x(sampleLens)), scale(cam.up, y(sampleLens)))};
     translate_m(origin, shiftVec);
-    direction -= shiftVec;
+    sub_m(direction, shiftVec);
   }
   return {origin, direction};
 }

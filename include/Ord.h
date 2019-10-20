@@ -12,36 +12,39 @@ class Ord final : Typeclass
 // methods
 
 template<typename T, REQUIRE_INSTANCE(Ord, T)>
-bool operator<=(const T&, const T&);
-
-template<typename T, REQUIRE_INSTANCE(Ord, T)>
-bool operator>=(const T& a, const T& b)
+bool less_eq(const T& a, const T& b)
 {
-  return !(a <= b) || a == b;
+  return a <= b;
 }
 
 template<typename T, REQUIRE_INSTANCE(Ord, T)>
-bool operator<(const T& a, const T& b)
+bool greater_eq(const T& a, const T& b)
 {
-  return (a <= b) && a != b;
+  return !less_eq(a, b) || eq(a, b);
 }
 
 template<typename T, REQUIRE_INSTANCE(Ord, T)>
-bool operator>(const T& a, const T& b)
+bool less(const T& a, const T& b)
 {
-  return !(a <= b);
+  return less_eq(a, b) && !eq(a, b);
+}
+
+template<typename T, REQUIRE_INSTANCE(Ord, T)>
+bool greater(const T& a, const T& b)
+{
+  return !less_eq(a, b);
 }
 
 template<typename T, REQUIRE_INSTANCE(Ord, T)>
 T max(const T& a, const T& b)
 {
-  return (a >= b) ? a : b;
+  return less_eq(a, b) ? b : a;
 }
 
 template<typename T, REQUIRE_INSTANCE(Ord, T)>
 T min(const T& a, const T& b)
 {
-  return (a <= b) ? a : b;
+  return less_eq(a, b) ? a : b;
 }
 
 template<typename T, REQUIRE_INSTANCE(Ord, T)>

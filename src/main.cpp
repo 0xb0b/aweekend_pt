@@ -218,7 +218,7 @@ Maybe<HitInfo> intersect(const Ray& r, const Procedural& obj)
 
 Maybe<HitInfo> intersect(const Ray& r, const Sphere& obj)
 {
-  const auto centerToRayOrigin {toVector(r.origin - obj.center)};
+  const auto centerToRayOrigin {toVector(sub(r.origin, obj.center))};
   const auto b = - dot(centerToRayOrigin, r.direction);
   const auto c = dot(centerToRayOrigin, centerToRayOrigin) - obj.radius * obj.radius;
   const auto d = b * b - c;
@@ -239,7 +239,7 @@ Maybe<HitInfo> intersect(const Ray& r, const Sphere& obj)
     {
       auto t = (x1 > bias) ? x1 : x2;
       auto hitPoint {translate(r.origin, scale(r.direction, t))};
-      auto normal {toVector(hitPoint - obj.center)};
+      auto normal {toVector(sub(hitPoint, obj.center))};
       scale_m(normal, 1.0f / obj.radius);
       return HitInfo(t, hitPoint, normal, obj.material);
     }
@@ -257,7 +257,7 @@ Maybe<ScatterInfo>
 scatter(const Vector3f incident, const Vector3f normal, const Lambertian& m)
 {
   auto nextRayDir {normal};
-  nextRayDir += randomInUnitSphereByRej();
+  add_m(nextRayDir, randomInUnitSphereByRej());
   if (dot(nextRayDir, normal) > 0.0f)
     return ScatterInfo(m.albedo, nextRayDir);
   else
@@ -268,9 +268,9 @@ Maybe<ScatterInfo>
 scatter(const Vector3f incident, const Vector3f normal, const Metallic& m)
 {
   auto nextRayDir {incident};
-  nextRayDir -= scale(normal, 2 * dot(incident, normal));
+  sub_m(nextRayDir, scale(normal, 2 * dot(incident, normal)));
   if (m.fuzzRadius > 0.0f)
-    nextRayDir += scale(randomInUnitSphereByRej(), m.fuzzRadius);
+    add_m(nextRayDir, scale(randomInUnitSphereByRej(), m.fuzzRadius));
   if (dot(nextRayDir, normal) > 0.0f)
     return ScatterInfo(m.albedo, nextRayDir);
   else
@@ -287,14 +287,14 @@ scatter(const Vector3f incident, const Vector3f normal, const Dielectric& m)
     // incident into the volume
     float reflectivity = m.rSchlick + (1 - m.rSchlick) * pow((1 + cosIncident), 5);
     if (random() < reflectivity)
-      nextRayDir -= scale(normal, 2 * cosIncident);
+      sub_m(nextRayDir, scale(normal, 2 * cosIncident));
     else
     {
       auto k = m.nReciprocal * cosIncident;
       float cosTransmitted = std::sqrt(1 - m.nReciprocal2 + k * k);
       k += cosTransmitted;
       scale_m(nextRayDir, m.nReciprocal);
-      nextRayDir -= scale(normal, k);
+      sub_m(nextRayDir, scale(normal, k));
     }
   }
   else
@@ -306,18 +306,18 @@ scatter(const Vector3f incident, const Vector3f normal, const Dielectric& m)
       float cosTransmitted = std::sqrt(1 - m.n2 + k * k);
       float reflectivity = m.rSchlick + (1 - m.rSchlick) * pow((1 - cosTransmitted), 5);
       if (random() < reflectivity)
-        nextRayDir -= scale(normal, 2 * cosIncident);
+        sub_m(nextRayDir, scale(normal, 2 * cosIncident));
       else
       {
         k -= cosTransmitted;
         scale_m(nextRayDir, m.n);
-        nextRayDir -= scale(normal, k);
+        sub_m(nextRayDir, scale(normal, k));
       }
     }
     else
     {
       // total internal reflection
-      nextRayDir -= scale(normal, 2 * cosIncident);
+      sub_m(nextRayDir, scale(normal, 2 * cosIncident));
     }
   }
   return ScatterInfo(m.albedo, nextRayDir);
@@ -327,12 +327,9 @@ Maybe<HitInfo> intersect(const Ray& r, const ObjList& world)
 {
   float closest_t = std::numeric_limits<float>::max();
   Maybe<HitInfo> x;
-  // TODO can not use range-based for here because of instance Eq requirement is not
-  // satisfied for iterator comparison
-  for (size_t i = 0; i < world.size(); i++)
+  for (const auto& obj : world)
   {
-    const auto& object = world.at(i);
-    const auto maybeHit = intersect(r, object);
+    const auto maybeHit = intersect(r, obj);
     if (maybeHit && maybeHit.value.parameter < closest_t)
     {
       x = maybeHit;
@@ -360,7 +357,7 @@ Color3 trace(const Ray& r, const ObjList& world, int depth=0)
       const auto& interaction = maybeInteraction.value;
       const Ray nextRay {hit.point, interaction.direction};
       auto incoming {trace(nextRay, world, ++depth)};
-      return interaction.albedo * incoming;
+      return mul_m(incoming, interaction.albedo);
     }
     else
     {
@@ -382,14 +379,16 @@ Color3 gammaCorrect(const Color3& color)
 
 std::vector<Lambertian> generateDiffuseMaterials()
 {
-  std::vector<Lambertian> materials(200);
-  materials[0] = Lambertian(Color3(0.5f, 0.5f, 0.5f));
-  materials[1] = Lambertian(Color3(0.7f, 0.3f, 0.3f));
-  for (size_t i = 2; i < materials.size(); i++)
+  const size_t count = 200;
+  std::vector<Lambertian> materials;
+  materials.reserve(count);
+  materials.emplace_back(Color3(0.5f, 0.5f, 0.5f));
+  materials.emplace_back(Color3(0.7f, 0.3f, 0.3f));
+  for (size_t i = 2; i < count; i++)
   {
-    materials[i] = Lambertian(Color3(stdrandom() * stdrandom(),
-                                     stdrandom() * stdrandom(),
-                                     stdrandom() * stdrandom()));
+    materials.emplace_back(Color3(stdrandom() * stdrandom(),
+                                  stdrandom() * stdrandom(),
+                                  stdrandom() * stdrandom()));
   }
   std::cout << "#dbg diffuse materials generated... " << std::endl;
   return materials;
@@ -397,13 +396,15 @@ std::vector<Lambertian> generateDiffuseMaterials()
 
 std::vector<Metallic> generateMetallicMaterials()
 {
-  std::vector<Metallic> materials(48);
-  materials[0] = Metallic(Color3(0.7f, 0.6f, 0.5f));
-  for (size_t i = 1; i < materials.size(); i++)
+  const size_t count = 50;
+  std::vector<Metallic> materials;
+  materials.reserve(count);
+  materials.emplace_back(Color3(0.7f, 0.6f, 0.5f));
+  for (size_t i = 1; i < count; i++)
   {
-    materials[i] = Metallic(Color3(0.8f  + 0.2f * stdrandom(),
-                                   0.8f  + 0.2f * stdrandom(),
-                                   0.8f  + 0.2f * stdrandom()), 0.5f * stdrandom());
+    materials.emplace_back(Color3(0.8f  + 0.2f * stdrandom(),
+                                  0.8f  + 0.2f * stdrandom(),
+                                  0.8f  + 0.2f * stdrandom()), 0.5f * stdrandom());
   }
   std::cout << "#dbg metallic materials generated... " << std::endl;
   return materials;
@@ -411,15 +412,17 @@ std::vector<Metallic> generateMetallicMaterials()
 
 std::vector<Dielectric> generateDielectricMaterials()
 {
-  std::vector<Dielectric> materials(8);
-  materials[0] = Dielectric(1.5f);
-  for (size_t i = 1; i < materials.size(); i++)
+  const size_t count = 20;
+  std::vector<Dielectric> materials;
+  materials.reserve(count);
+  materials.emplace_back(1.5f);
+  for (size_t i = 1; i < count; i++)
   {
-    materials[i] = Dielectric(1.2f + 0.8f * stdrandom(),
-                              (stdrandom() > 0.0) ? unit<Color3> :
-                                 Color3(0.5 * (1.0f + stdrandom()),
-                                        0.5 * (1.0f + stdrandom()),
-                                        0.5 * (1.0f + stdrandom())) );
+    materials.emplace_back(1.2f + 0.8f * stdrandom(),
+                           (stdrandom() > 0.0) ? unit<Color3> :
+                                Color3(0.5 * (1.0f + stdrandom()),
+                                       0.5 * (1.0f + stdrandom()),
+                                       0.5 * (1.0f + stdrandom())) );
   }
   std::cout << "#dbg dielectric materials generated... " << std::endl;
   return materials;
@@ -429,26 +432,24 @@ std::vector<Sphere> generateSpheres(const std::vector<Lambertian>& diffuseMateri
                                     const std::vector<Metallic>& metalMaterials,
                                     const std::vector<Dielectric>& dielectricMaterials)
 {
+  size_t count = 488;
   std::vector<Sphere> spheres;
-  size_t numSpheres = 488;
-  spheres.reserve(numSpheres);
+  spheres.reserve(count);
 
-  spheres[0] = Sphere(1000.0f, Point3f(-2.0f, 0.0f, -1000.0f),
-                      Material(diffuseMaterials[0]));
+  spheres.emplace_back(1000.0f, Point3f(-2.0f, 0.0f, -1000.0f), Material(diffuseMaterials[0]));
 
   Point3f center1 {-2.0f, -3.0f, 1.0f};
   auto radius1 = 1.0f;
-  spheres[1] = Sphere(radius1, center1, Material(diffuseMaterials[1]));
+  spheres.emplace_back(radius1, center1, Material(diffuseMaterials[1]));
 
   Point3f center2 {-2.0f, 0.0f, 1.0f};
   auto radius2 = 1.0f;
-  spheres[2] = Sphere(radius2, center2, Material(dielectricMaterials[0]));
+  spheres.emplace_back(radius2, center2, Material(dielectricMaterials[0]));
 
   Point3f center3 {-2.0f, 3.0f, 1.0f};
   auto radius3 = 1.0f;
-  spheres[3] = Sphere(radius3, center3, Material(metalMaterials[0]));
+  spheres.emplace_back(radius3, center3, Material(metalMaterials[0]));
 
-  size_t index = 4;
   const float radius = 0.2f;
   const float xCenter = -2.0f;
   const float yCenter = 0.0f;
@@ -469,35 +470,32 @@ std::vector<Sphere> generateSpheres(const std::vector<Lambertian>& diffuseMateri
       {
         auto i = std::min(diffuseMaterials.size() - 1,
             static_cast<size_t>(stdrandom() * diffuseMaterials.size()));
-        spheres[index] = Sphere(radius, center,
-                                Material(diffuseMaterials[i]));
+        spheres.emplace_back(radius, center, Material(diffuseMaterials[i]));
       }
       else if (chooseMaterial < 0.8f)
       {
         auto i = std::min(metalMaterials.size() - 1,
             static_cast<size_t>(stdrandom() * metalMaterials.size()));
-        spheres[index] = Sphere(radius, center,
-                                Material(metalMaterials[i]));
+        spheres.emplace_back(radius, center, Material(metalMaterials[i]));
       }
       else
       {
         auto i = std::min(dielectricMaterials.size() - 1,
             static_cast<size_t>(stdrandom() * dielectricMaterials.size()));
-        spheres[index] = Sphere(radius, center,
-                                Material(dielectricMaterials[i]));
+        spheres.emplace_back(radius, center, Material(dielectricMaterials[i]));
       }
-      ++index;
     }
   }
-  std::cout << "#dbg " << index << " (" << spheres.size() << ") spheres generated... " << std::endl;
+  std::cout << "#dbg " << spheres.size() << " spheres generated... " << std::endl;
   return spheres;
 }
 
 ObjList randomScene(const std::vector<Sphere>& spheres)
 {
-  ObjList scene(477);
-  for (size_t i = 0; i < scene.size(); i++)
-    scene[i] = Procedural(spheres[i]);
+  ObjList scene;
+  scene.reserve(spheres.size());
+  for (const auto& obj : spheres)
+    scene.emplace_back(obj);
   return scene;
 }
 
@@ -556,7 +554,7 @@ int main()
       for (size_t s = 0; s < spp; s++)
       {
         const auto ray {generateRay(cam, i, j)};
-        color += trace(ray, world);
+        add_m(color, trace(ray, world));
       }
       scale_m(color, reciprocalSpp);
       const Rgb sdcolor {gammaCorrect(color)};

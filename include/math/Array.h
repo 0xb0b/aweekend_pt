@@ -59,11 +59,10 @@ struct Instance<Eq<Array<Tag, dim, ElemT>>>
 };
 
 template<typename Tag, size_t dim, typename ElemT>
-bool operator==(const Array<Tag, dim, ElemT>& a,
-                const Array<Tag, dim, ElemT>& b)
+bool eq(const Array<Tag, dim, ElemT>& a, const Array<Tag, dim, ElemT>& b)
 {
   for (size_t i = 0; i < dim; i++)
-    if (a.data[i] != b.data[i])
+    if (neq(a.data[i], b.data[i]))
       return false;
   return true;
 }
@@ -92,47 +91,47 @@ unit<Array<Tag, dim, ElemT> > {unit<ElemT>};
 
 template<typename Tag, size_t dim, typename ElemT>
 Array<Tag, dim, ElemT>&
-operator+=(Array<Tag, dim, ElemT>& a, const Array<Tag, dim, ElemT>& b)
+add_m(Array<Tag, dim, ElemT>& a, const Array<Tag, dim, ElemT>& b)
 {
   for (size_t i = 0; i < dim; i++)
-    a.data[i] += b.data[i];
+    add_m(a.data[i], b.data[i]);
   return a;
 }
 
 template<typename Tag, size_t dim, typename ElemT>
 Array<Tag, dim, ElemT>&
-operator-=(Array<Tag, dim, ElemT>& a, const Array<Tag, dim, ElemT>& b)
+sub_m(Array<Tag, dim, ElemT>& a, const Array<Tag, dim, ElemT>& b)
 {
   for (size_t i = 0; i < dim; i++)
-    a.data[i] -= b.data[i];
+    sub_m(a.data[i], b.data[i]);
   return a;
 }
 
 template<typename Tag, size_t dim, typename ElemT>
 Array<Tag, dim, ElemT>&
-operator*=(Array<Tag, dim, ElemT>& a, const Array<Tag, dim, ElemT>& b)
+mul_m(Array<Tag, dim, ElemT>& a, const Array<Tag, dim, ElemT>& b)
 {
   for (size_t i = 0; i < dim; i++)
-    a.data[i] *= b.data[i];
+    mul_m(a.data[i], b.data[i]);
   return a;
 }
 
 template<typename Tag, size_t dim, typename ElemT>
 Array<Tag, dim, ElemT>&
-operator/=(Array<Tag, dim, ElemT>& a, const Array<Tag, dim, ElemT>& b)
+div_m(Array<Tag, dim, ElemT>& a, const Array<Tag, dim, ElemT>& b)
 {
   // TODO division by zero?
   for (size_t i = 0; i < dim; i++)
-    a.data[i] /= b.data[i];
+    div_m(a.data[i], b.data[i]);
   return a;
 }
 
 template<typename Tag, size_t dim, typename ElemT>
-Array<Tag, dim, ElemT>
-operator-(Array<Tag, dim, ElemT> a)
+Array<Tag, dim, ElemT>&
+negate_m(Array<Tag, dim, ElemT>& a)
 {
   for (size_t i = 0; i < dim; i++)
-    a.data[i] = -a.data[i];
+    negate_m(a.data[i]);
   return a;
 }
 
@@ -144,7 +143,7 @@ Array<Tag, dim, ElemT>&
 scale_m(Array<Tag, dim, ElemT>& a, ElemT s)
 {
   for (auto& e : a.data)
-    e *= s;
+    mul_m(e, s);
   return a;
 }
 
@@ -160,12 +159,15 @@ scale(Array<Tag, dim, ElemT> a, ElemT s)
 // result is equal to b if blend coefficient k is 1 and to a if k is 0
 template<typename Tag, size_t dim, typename ElemT, REQUIRE_INSTANCE(Ord, ElemT)>
 Array<Tag, dim, ElemT>
-mix(Array<Tag, dim, ElemT> a, const Array<Tag, dim, ElemT>& b, ElemT k)
+mix(Array<Tag, dim, ElemT> a, const Array<Tag, dim, ElemT>& b, const ElemT& k)
 {
   const auto kb {clamp(k, zero<ElemT>, unit<ElemT>)};
   const auto ka {unit<ElemT> - k};
   for (size_t i = 0; i < dim; i++)
-    a.data[i] = ka * a.data[i] + kb * b.data[i];
+  {
+    mul_m(a.data[i], ka);
+    add_m(a.data[i], mul(kb, b.data[i]));
+  }
   return a;
 }
 

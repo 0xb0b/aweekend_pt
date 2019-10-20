@@ -45,7 +45,7 @@ Point<dim, ElemT>&
 translate_m(Point<dim, ElemT>& p, const Vector<dim, ElemT>& v)
 {
   for (size_t i = 0; i < dim; i++)
-    p.data[i] += v.data[i];
+    add_m(p.data[i], v.data[i]);
   return p;
 }
 
@@ -62,8 +62,8 @@ ElemT distance2(const Point<dim, ElemT>& a, const Point<dim, ElemT>& b)
   auto d_squared = zero<ElemT>;
   for (size_t i = 0; i < dim; i++)
   {
-    const auto d = a.data[i] - b.data[i];
-    d_squared += d * d;
+    auto d = sub(a.data[i], b.data[i]);
+    add_m(d_squared, mul_m(d, d));
   }
   return d_squared;
 }

@@ -20,7 +20,7 @@ ElemT dot(const Vector<dim, ElemT>& a, const Vector<dim, ElemT>& b)
 {
   auto result = zero<ElemT>;
   for (size_t i = 0; i < dim; i++)
-    result += a.data[i] * b.data[i];
+    add_m(result, mul(a.data[i], b.data[i]));
   return result;
 }
 
@@ -36,7 +36,7 @@ normalize_m(Vector<dim, ElemT>& v)
 {
   const auto lsquared = dot(v, v);
   if (lsquared != zero<ElemT>)
-    scale_m(v, unit<ElemT> / std::sqrt(lsquared));
+    scale_m(v, div(unit<ElemT>, std::sqrt(lsquared)));
   return v;
 }
 
@@ -71,8 +71,8 @@ ElemT z(const Vector<dim, ElemT>& a)
 template<typename ElemT>
 Vector<3, ElemT> cross(const Vector<3, ElemT>& a, const Vector<3, ElemT>& b)
 {
-  return {a.data[1] * b.data[2] - a.data[2] * b.data[1],
-          a.data[2] * b.data[0] - a.data[0] * b.data[2],
-          a.data[0] * b.data[1] - a.data[1] * b.data[0]};
+  return {sub(mul(a.data[1], b.data[2]), mul(a.data[2], b.data[1])),
+          sub(mul(a.data[2], b.data[0]), mul(a.data[0], b.data[2])),
+          sub(mul(a.data[0], b.data[1]), mul(a.data[1], b.data[0]))};
 }
 

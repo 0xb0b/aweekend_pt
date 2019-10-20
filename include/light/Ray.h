@@ -27,7 +27,7 @@ struct Ray
   Ray(Point3f a, Point3f b, Tag t = Tag::primary)
     : type {t}
     , origin {a}
-    , direction {normalize(toVector(b - a))}
+    , direction {normalize(toVector(sub_m(b, a)))}
   {}
 };
 
