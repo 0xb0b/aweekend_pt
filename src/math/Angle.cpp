@@ -6,6 +6,7 @@ namespace internal
 constexpr float pi = 3.14159265358979323846;
 }
 
+// TODO why constexpr + const?
 const float pi = internal::pi;
 
 
